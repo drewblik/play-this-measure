@@ -14,17 +14,17 @@ export function mountCapture(app) {
     <a class="backlink" href="#/">← Home</a>
     <div class="eyebrow" style="margin-top:10px">Explain a measure</div>
     <h2 class="view-h">Photograph the measure</h2>
-    <p class="lede">A tight, straight-on crop of <b>1–2 measures</b>. Add a full-page shot too if you can, so I can read the key and time signature.</p>
+    <p class="lede">A tight, straight-on crop of <b>1–2 measures</b> — take a photo or pick one from your library. Add a full-page shot too if you can, so I can read the key and time signature.</p>
 
     <div class="card">
       <label class="filebtn" id="cropBtn">
-        <input type="file" accept="image/*" capture="environment" id="cropInput" hidden>
+        <input type="file" accept="image/*" id="cropInput" hidden>
         <span id="cropLabel">📷 Crop photo — required</span>
       </label>
       <img class="preview" id="cropPreview" hidden alt="crop preview">
 
       <label class="filebtn ghost" id="pageBtn" style="margin-top:12px">
-        <input type="file" accept="image/*" capture="environment" id="pageInput" hidden>
+        <input type="file" accept="image/*" id="pageInput" hidden>
         <span id="pageLabel">📄 Full page — optional, for context</span>
       </label>
       <img class="preview" id="pagePreview" hidden alt="page preview">

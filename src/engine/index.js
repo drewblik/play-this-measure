@@ -56,6 +56,9 @@ export function createLab(container, opts) {
     const total = totalTicks(notation);
     const tpm = ticksPerMeasure(notation.timeSignature, notation.ticksPerBeat);
     const sub = ['', 'e', '&', 'a']; // sixteenth grid
+    // Subdivision labels (e/&/a) collide once the grid is dense (e.g. a 2-measure
+    // crop = 32 cells). Past ~16 ticks show beat numbers only.
+    const showSubs = total <= 16;
     countrow.innerHTML = '';
     countCells = [];
     for (let t = 0; t < total; t++) {
@@ -63,7 +66,7 @@ export function createLab(container, opts) {
       const subIdx = within % notation.ticksPerBeat;
       const beat = Math.floor(within / notation.ticksPerBeat) + 1;
       const span = document.createElement('span');
-      span.textContent = subIdx === 0 ? String(beat) : sub[subIdx] || '';
+      span.textContent = subIdx === 0 ? String(beat) : (showSubs ? (sub[subIdx] || '') : '');
       if (subIdx === 0) span.classList.add('beat');
       span.style.left = mapFrac(t, total) * 100 + '%'; // sit under the note at this tick (PAD-aware)
       countrow.appendChild(span);
