@@ -137,13 +137,21 @@ function drawChord(svg, tick, members, xAt, lines, heads, hand) {
 
 // Render one voice into its clef band. Mirrors the prototype's renderNotation,
 // scoped to one voice and one clef.
-function renderVoice(svg, voice, mode, ticksPerBeat, xAt, heads) {
+function renderVoice(svg, voice, notation, mode, xAt, heads) {
+  const ticksPerBeat = notation.ticksPerBeat;
   const lines = clefLinesFor(voice.hand);
   const restY = yOf((Math.max(...lines) + Math.min(...lines)) / 2); // mid-staff
 
-  // Rests: glyph at mid-staff, counted but no head/stem.
+  // Rests: glyph at mid-staff. Suppress a rest when another voice in the SAME
+  // clef is sounding across it (e.g. Danny's struck-chord voice rests while the
+  // held melody plays) — otherwise the rest glyph collides with that note.
   for (const note of voice.notes) {
     if (note.pitch !== 'rest') continue;
+    const covered = notation.voices.some((other) =>
+      other !== voice && other.hand === voice.hand &&
+      other.notes.some((n) => n.pitch !== 'rest' &&
+        n.startTick < note.startTick + note.durTicks && n.startTick + n.durTicks > note.startTick));
+    if (covered) continue;
     const t = el('text', { x: xAt(note.startTick) - 5, y: restY + 4, class: 'rest' });
     t.textContent = REST_GLYPH(note.durTicks);
     svg.appendChild(t);
@@ -224,7 +232,7 @@ export function renderStaff(svg, notation, { mode }) {
   }
 
   const heads = [];
-  for (const voice of notation.voices) renderVoice(svg, voice, mode, notation.ticksPerBeat, xAt, heads);
+  for (const voice of notation.voices) renderVoice(svg, voice, notation, mode, xAt, heads);
   return { heads, width };
 }
 
