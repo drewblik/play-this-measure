@@ -4,7 +4,7 @@
 // 100ms-lookahead / 25ms scheduler, and exposes play/stop/setTempo/setMode/
 // setHands/destroy. Orchestrates renderer.js (visuals) + audio.js (sound).
 import { totalTicks, ticksPerMeasure, mapFrac } from './layout.js';
-import { ensureCtx, click, tone, buildAttacks } from './audio.js';
+import { ensureCtx, dropCtx, click, tone, buildAttacks } from './audio.js';
 import { renderStaff, buildBlocks, clefPositions } from './renderer.js';
 
 const LOOKAHEAD = 0.1; // seconds scheduled ahead
@@ -112,6 +112,7 @@ export function createLab(container, opts) {
   let sched = [];
   let timer = null;
   let rafId = null;
+  let stuckTimer = null; // iOS frozen-clock watchdog
   let lastTick = -1; // edge-detect so onTick fires once per tick, not per frame
   let wantPlay = false; // intent flag; guards the async resume->begin path
   const secPerTick = () => 60 / bpm / notation.ticksPerBeat;
@@ -185,6 +186,14 @@ export function createLab(container, opts) {
       scheduler();
       playhead.classList.add('on');
       rafId = requestAnimationFrame(animate);
+      // iOS watchdog: if the context clock never advances, this context is the
+      // frozen one. Drop it so the next Play rebuilds a fresh context, and stop
+      // so the user can re-tap (we can't resume a fresh ctx outside the gesture).
+      const ctxStart = ctx.currentTime;
+      clearTimeout(stuckTimer);
+      stuckTimer = setTimeout(() => {
+        if (isPlaying && ctx.currentTime - ctxStart < 0.05) { dropCtx(); stop(); }
+      }, 450);
     };
     // iOS: the AudioContext can be suspended/interrupted between plays. resume()
     // is async; if we schedule against a still-frozen currentTime the playhead
@@ -197,6 +206,7 @@ export function createLab(container, opts) {
     wantPlay = false;
     isPlaying = false;
     clearInterval(timer);
+    clearTimeout(stuckTimer);
     if (rafId) cancelAnimationFrame(rafId);
     playhead.classList.remove('on');
     countCells.forEach((c) => c.classList.remove('lit'));

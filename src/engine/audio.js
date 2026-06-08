@@ -7,15 +7,35 @@
 import { pitchToFreq, splitAtBeats } from './layout.js';
 
 let _ctx = null;
+function makeCtx() {
+  const C = window.AudioContext || window.webkitAudioContext;
+  _ctx = new C();
+  return _ctx;
+}
 
-// AudioContext must resume on a user gesture (iOS). Guard every play() with this
-// (TDD §14).
+// Hand back a RUNNING AudioContext, rebuilding if the cached one is unusable.
+// iOS leaves the context 'suspended'/'interrupted'/'closed' after an app switch,
+// audio interruption, or page/PWA update, and resume() on that poisoned context
+// can resolve while its clock stays frozen (frozen playhead, no sound, no click).
+// A context created + resumed inside the play gesture is the only reliable
+// recovery — the same effect as reloading the page — so we keep the cached
+// context ONLY while it is actively running; otherwise we rebuild (TDD §14).
 export function ensureCtx() {
-  if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
-  if (_ctx.state !== 'running') _ctx.resume(); // covers 'suspended' AND iOS 'interrupted'
+  if (_ctx && _ctx.state === 'running') return _ctx;
+  if (_ctx && _ctx.state !== 'closed') { try { _ctx.close(); } catch (e) { /* already gone */ } }
+  makeCtx();
+  if (_ctx.state !== 'running') _ctx.resume(); // resume within the user gesture
   return _ctx;
 }
 export function getCtx() { return _ctx; }
+
+// Invalidate the cached context so the next ensureCtx() builds a fresh one. Used
+// when a context that still reports state 'running' is detected with a frozen
+// clock (the rarer iOS case ensureCtx can't catch by state alone).
+export function dropCtx() {
+  if (_ctx && _ctx.state !== 'closed') { try { _ctx.close(); } catch (e) { /* already gone */ } }
+  _ctx = null;
+}
 
 // Metronome click (square blip). accent = downbeat (measure start).
 export function click(ctx, t, accent) {

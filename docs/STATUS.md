@@ -10,8 +10,8 @@ is `play-this-measure-tdd.md`; UX context is `play-this-measure-fdd.md`._
 - **Production:** https://play-this-measure.vercel.app — engine fixtures at **/fixtures.html**.
 - **Dev loop (no laptop needed):** edit → commit → push to `main` → Vercel auto-deploys → open the production URL on the phone. Each branch also gets a Vercel preview. Real data lives on the production URL only (preview URLs have separate on-device storage).
 
-## OPEN
-None. (Resolved last session: iOS "stuck after replay/switch" — the fix in `index.js` `start()` defers scheduling into `ctx.resume().then(begin)` with a `wantPlay` guard, and `ensureCtx` resumes from any non-running state. Drew's A/B test on the iPhone confirmed both replay and play-after-switch on 2026-06-08.)
+## OPEN — under test on iPhone
+**iOS audio context hardening (round 2).** The round-1 fix (`resume().then(begin)` + `wantPlay`) was not enough: after a deploy/PWA update or app-switch the cached AudioContext gets poisoned — `resume()` resolves but the clock stays frozen (frozen playhead, no metronome, no notes; a full Safari restart fixes it). New fix: `audio.js` `ensureCtx()` now keeps the cached context ONLY while it is actively running and otherwise rebuilds a fresh one inside the play gesture; `dropCtx()` invalidates it; and `index.js` arms a 450ms watchdog that, if the clock never advances, drops the context and stops so the next tap rebuilds. Verified headlessly (healthy / frozen→recover / suspended→rebuild) + smoke + build. **Awaiting Drew's confirmation on the iPhone that Play reliably makes sound, including after switching fixtures / leaving + returning to the page.**
 
 ## In progress: M1 — renderer proof / geometry
 **Done (first pass, awaiting Drew's on-device review):**
