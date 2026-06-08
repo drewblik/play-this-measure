@@ -15,6 +15,11 @@ If more than one measure happens to be visible in the crop, read ONLY the FIRST 
 
 Work in two steps.
 
+Staff reference — use these exact anchors to count a notehead's line/space position; do not eyeball pitches:
+- TREBLE (right hand): lines bottom→top = E4, G4, B4, D5, F5; spaces bottom→top = F4, A4, C5, E5. Middle C4 sits on the first ledger line BELOW this staff; D4 hangs just under the bottom line.
+- BASS (left hand): lines bottom→top = G2, B2, D3, F3, A3; spaces bottom→top = A2, C3, E3, G3. Middle C4 sits on the first ledger line ABOVE this staff; B3 sits just above the top line.
+- For any note, find the nearest reference line, then step up/down by line-and-space to its head. Higher on the staff = higher pitch.
+
 STEP 1 — Read aloud (this raises accuracy; keep it terse). Go beat by beat, left to right. For EACH staff (treble then bass) name, for every notehead at that beat: which line or space it sits on (count from the bottom line of that staff, and note ledger lines above/below), the pitch that yields in that clef and key, and its duration read from the notehead shape (filled head = quarter or, if beamed/flagged, eighth/sixteenth; open head with stem = half; open head no stem = whole).
 
 A single staff often carries TWO independent lines at once — most commonly a moving melody with stems UP over longer held notes with stems DOWN (or vice versa). When the notes on a staff do NOT all share the same rhythm, separate them by stem direction into independent lines and read each line on its own. Verify that EACH independent line sums to a full measure before continuing.
