@@ -12,7 +12,7 @@
 
 /* ---- notation ---- */
 .lab-playfield { position: relative; }
-svg.lab-notation { display: block; width: 100%; height: 100px; overflow: visible; }
+svg.lab-notation { display: block; width: 100%; overflow: visible; } /* height set inline per notation (staffHeight) */
 
 .staffline { stroke: var(--ink); stroke-width: 1; }
 .ledger { stroke: var(--ink); stroke-width: 1; }

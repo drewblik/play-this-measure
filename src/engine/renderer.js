@@ -227,7 +227,9 @@ export function renderStaff(svg, notation, { mode }) {
   svg.innerHTML = '';
   const total = totalTicks(notation);
   const width = svg.getBoundingClientRect().width || 700;
-  svg.setAttribute('height', staffHeight(notation));
+  const h = staffHeight(notation);
+  svg.setAttribute('height', h);
+  svg.style.height = h + 'px'; // inline style beats the CSS height so the box grows for a grand staff
   const xAt = (t) => mapFrac(t, total) * width;
 
   // Staff lines per present clef. Clef glyphs are drawn by createLab in a
