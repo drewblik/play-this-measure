@@ -2,6 +2,7 @@
 // Confirm, Lesson. (Home/Song with persistence + circle-of-fifths grow in M3.)
 import './styles.css';
 import './ui/ui.css';
+import './engine/lab.css'; // staff/stem/beam strokes + lab layout (the Confirm & Lesson notation)
 import { mountHome } from './ui/home.js';
 import { mountCapture } from './ui/capture.js';
 import { mountConfirm } from './ui/confirm.js';
