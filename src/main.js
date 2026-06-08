@@ -2,7 +2,7 @@ import './styles.css';
 
 // Build marker — bumped manually so we can confirm a fresh deploy reached the
 // phone after a push. (The dev loop is: push -> Vercel deploys -> reload phone.)
-const BUILD = 'M-1 · hello-PWA · 2026-06-07';
+const BUILD = 'M0 · engine + fixtures · 2026-06-07';
 
 // --- Service worker -------------------------------------------------------
 // Registered from the site root so its scope covers the whole app. The M-1
@@ -57,6 +57,9 @@ function paint(sw = swState) {
              then open it from the home screen. It should launch full-screen and this
              line should turn into a check.</p>`
       }
+      <p class="hint" style="margin-top:14px;border-top:1px solid var(--rule);padding-top:14px">
+        <a href="/fixtures.html" style="color:var(--attack);font-weight:600;text-decoration:none">▶ Open the engine fixtures (M0)</a>
+      </p>
     </div>
 
     <p class="meta">${BUILD}</p>
