@@ -18,6 +18,18 @@ function imageBlock(base64) {
   return { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } };
 }
 
+// Pull the JSON object out of a response that may have a reasoning preamble before
+// it (S1 now localizes each notehead in prose first, which lifts pitch accuracy).
+// Try the whole string, then fall back to the outermost { ... } span.
+function extractJson(text) {
+  const cleaned = text.replace(/```json|```/g, '').trim();
+  try { return JSON.parse(cleaned); } catch (e) { /* fall through to brace-span */ }
+  const i = cleaned.indexOf('{');
+  const j = cleaned.lastIndexOf('}');
+  if (i >= 0 && j > i) return JSON.parse(cleaned.slice(i, j + 1));
+  throw new SyntaxError('no JSON object in response');
+}
+
 async function sha256HexOfString(str) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -51,7 +63,7 @@ export async function callStage({ model, system, userBlocks, maxTokens }) {
     if (data.error) { const e = new Error(data.error.message || String(data.error)); e.apiError = data.error; e.status = r.status; throw e; }
     const text = (data.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n');
     try {
-      const json = JSON.parse(text.replace(/```json|```/g, '').trim());
+      const json = extractJson(text);
       return { json, usage: data.usage, model };
     } catch (parseErr) {
       if (usedJsonRetry) throw parseErr;
@@ -77,7 +89,7 @@ export async function runS1({ cropBase64, pageBase64, cropHash, pageHash, contex
   let cents = 0;
   let result = null;
   for (let pass = 0; pass <= 2; pass++) { // 1 read + up to 2 repairs
-    const { json, usage } = await callStage({ model: MODELS.S1, system, userBlocks, maxTokens: 3000 });
+    const { json, usage } = await callStage({ model: MODELS.S1, system, userBlocks, maxTokens: 4000 }); // room for the step-1 read-aloud + JSON
     attempts++;
     cents += centsFromUsage(usage, MODELS.S1);
     if (json.error) { result = { error: json.error, detail: json.detail || null, attempts, cents }; break; }

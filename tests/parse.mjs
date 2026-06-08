@@ -48,6 +48,13 @@ ok((await callStage({ model: 'claude-opus-4-8', system: 's', userBlocks: [{ type
   ok(calls[1].body.messages[0].content.some((b) => b.text?.includes('not valid JSON')), 'callStage: retry appends the JSON nudge');
 }
 
+// 4b. callStage — extracts the JSON when S1 reasons (read-aloud) before it
+{
+  mockFetch([aiText('STEP 1 — Read aloud:\nBeat 1 treble: 2nd line = G4, quarter.\nBeat 1 bass: middle line = D3, half.\n\nSTEP 2:\n{"d":4}')]);
+  const r = await callStage({ model: 'claude-opus-4-8', system: 's', userBlocks: [{ type: 'text', text: 'x' }], maxTokens: 100 });
+  ok(r.json.d === 4, 'callStage: extracts JSON after a reasoning preamble');
+}
+
 // 5. callStage — retries a 429 then succeeds
 {
   const calls = mockFetch([{ status: 429, body: {} }, aiText({ c: 3 })]);

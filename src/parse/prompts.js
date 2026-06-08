@@ -13,7 +13,11 @@ The crop may be slightly rotated, tilted, or shot at an angle — mentally align
 
 If more than one measure happens to be visible in the crop, read ONLY the FIRST (leftmost) complete measure, between the first two barlines, and ignore everything to its right.
 
-Output ONLY a JSON object, no prose, no fences, matching exactly this schema:
+Work in two steps.
+
+STEP 1 — Read aloud (this raises accuracy; keep it terse). Go beat by beat, left to right. For EACH staff (treble then bass) name, for every notehead at that beat: which line or space it sits on (count from the bottom line of that staff, and note ledger lines above/below), the pitch that yields in that clef and key, and its duration read from the notehead shape (filled head = quarter or, if beamed/flagged, eighth/sixteenth; open head with stem = half; open head no stem = whole). Verify each staff's durations sum to a full measure before continuing.
+
+STEP 2 — Output the JSON object as the LAST thing in your response (nothing after it), matching exactly this schema:
 {
   "timeSignature": "n/d",
   "ticksPerBeat": 4,
