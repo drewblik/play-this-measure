@@ -64,9 +64,9 @@ export async function callStage({ model, system, userBlocks, maxTokens }) {
 
 // S1 — read the crop into NOTATION, validating + repairing up to 2 times (§5/§10.2).
 // Returns { notation, validation, attempts, cents } | { error, detail, attempts, cents }.
-export async function runS1({ cropBase64, pageBase64, cropHash, pageHash, contextLine }, { cache } = {}) {
+export async function runS1({ cropBase64, pageBase64, cropHash, pageHash, contextLine }, { cache, forceFresh } = {}) {
   const key = await cacheKey('S1', [cropHash, pageHash || ''], contextLine);
-  if (cache) { const hit = await cache.get(key); if (hit) return { ...hit.response, cached: true }; }
+  if (cache && !forceFresh) { const hit = await cache.get(key); if (hit) return { ...hit.response, cached: true }; }
 
   const system = s1System(contextLine);
   const baseBlocks = [imageBlock(cropBase64)];

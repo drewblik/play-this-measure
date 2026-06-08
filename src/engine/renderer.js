@@ -123,6 +123,7 @@ function drawNote(svg, seg, struck, beamY, xAt, lines, heads, hand, stemDir, cle
   drawLedgers(svg, x, d, lines, clef);
   drawAccidental(svg, x, y, p.accidental);
   const nh = placeNotehead(svg, x, y, struck, hand);
+  if (seg.confidence < 0.7) nh.classList.add('low-conf'); // §13 — uncertain reading
   heads.push({ tick: seg.startTick, struck, el: nh, hand });
   const sx = x + (stemDir > 0 ? -5 : 5); // down-stem on the left, up-stem on the right
   const sb = beamY != null ? beamY : y + stemDir * 30;
@@ -171,6 +172,7 @@ function drawChord(svg, tick, members, xAt, lines, heads, hand, stemDir, clef) {
     drawLedgers(svg, x, p.diatonic, lines, clef);
     drawAccidental(svg, x, y, p.accidental);
     const nh = placeNotehead(svg, x, y, m.struck, hand);
+    if (m.seg.confidence < 0.7) nh.classList.add('low-conf'); // §13 — uncertain reading
     heads.push({ tick: m.seg.startTick, struck: m.struck, el: nh, hand });
   });
 }
@@ -206,6 +208,7 @@ function renderVoice(svg, voice, notation, mode, xAt, heads) {
   for (const note of voice.notes) {
     if (note.pitch === 'rest') continue;
     for (const seg of splitAtBeats(note, ticksPerBeat)) {
+      seg.confidence = note.confidence; // carry §4 confidence for the §13 low-conf flag
       const struck = mode === 'tie' ? seg.startTick === note.startTick : true;
       segAll.push({ seg, struck });
     }

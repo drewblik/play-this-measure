@@ -1,69 +1,41 @@
+// src/main.js — app shell + hash router (TDD §8). M2 routes: Home, Capture,
+// Confirm, Lesson. (Home/Song with persistence + circle-of-fifths grow in M3.)
 import './styles.css';
+import './ui/ui.css';
+import { mountHome } from './ui/home.js';
+import { mountCapture } from './ui/capture.js';
+import { mountConfirm } from './ui/confirm.js';
+import { mountLesson } from './ui/lesson.js';
 
-// Build marker — bumped manually so we can confirm a fresh deploy reached the
-// phone after a push. (The dev loop is: push -> Vercel deploys -> reload phone.)
-const BUILD = 'M0 · engine + fixtures · 2026-06-07';
+const app = document.getElementById('app');
 
-// --- Service worker -------------------------------------------------------
-// Registered from the site root so its scope covers the whole app. The M-1
-// worker is network-first (always fresh online during active development);
-// the real cache-first app-shell worker lands in M5 (TDD §15.6).
-let swState = 'unsupported';
+// Service worker: the M-1 network-first dev worker (cache-first app shell is M5).
 if ('serviceWorker' in navigator) {
-  swState = 'registering';
   window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/sw.js')
-      .then(() => paint('registered'))
-      .catch((err) => {
-        console.error('SW registration failed', err);
-        paint('failed');
-      });
+    navigator.serviceWorker.register('/sw.js').catch((err) => console.error('SW registration failed', err));
   });
 }
 
-const isStandalone =
-  window.matchMedia('(display-mode: standalone)').matches ||
-  window.navigator.standalone === true;
+const routes = [
+  { re: /^#\/lesson\/(.+)$/, mount: (el, m) => mountLesson(el, { id: decodeURIComponent(m[1]) }) },
+  { re: /^#\/capture\/?$/, mount: (el) => mountCapture(el) },
+  { re: /^#\/confirm\/?$/, mount: (el) => mountConfirm(el) },
+  { re: /^#\/?$/, mount: (el) => mountHome(el) },
+];
 
-function paint(sw = swState) {
-  const app = document.getElementById('app');
-  app.innerHTML = `
-    <div class="eyebrow">Reading Rhythm · Dev Infrastructure</div>
-    <h1>Play This <span class="em">Measure</span></h1>
-    <p class="lede">
-      I can name every note &mdash; but not the chord they make, the count they sit
-      on, or which ones I'm still holding. <b>This is the M-1 shell.</b>
-    </p>
-
-    <div class="card">
-      <div class="status">
-        <span class="dot ok"></span>
-        App shell loaded
-      </div>
-      <div class="status">
-        <span class="dot ${sw === 'registered' ? 'ok' : sw === 'failed' ? '' : 'hold'}"></span>
-        Service worker: ${sw}
-      </div>
-      <div class="status">
-        <span class="dot ${isStandalone ? 'ok' : 'hold'}"></span>
-        ${isStandalone ? 'Running installed (standalone) ✓' : 'Open in browser — not yet installed'}
-      </div>
-
-      ${
-        isStandalone
-          ? `<p class="hint"><b>Installed.</b> M-1 is verified on this device.</p>`
-          : `<p class="hint">To install: tap <b>Share</b> &rarr; <b>Add to Home Screen</b>,
-             then open it from the home screen. It should launch full-screen and this
-             line should turn into a check.</p>`
-      }
-      <p class="hint" style="margin-top:14px;border-top:1px solid var(--rule);padding-top:14px">
-        <a href="/fixtures.html" style="color:var(--attack);font-weight:600;text-decoration:none">▶ Open the engine fixtures (M0)</a>
-      </p>
-    </div>
-
-    <p class="meta">${BUILD}</p>
-  `;
+let cleanup = null;
+async function route() {
+  const hash = location.hash || '#/';
+  for (const r of routes) {
+    const m = hash.match(r.re);
+    if (!m) continue;
+    if (cleanup) { try { cleanup(); } catch (e) { /* ignore */ } cleanup = null; }
+    window.scrollTo(0, 0);
+    cleanup = (await r.mount(app, m)) || null;
+    return;
+  }
+  location.hash = '#/'; // unknown route -> home
 }
 
-paint();
+window.addEventListener('hashchange', route);
+route();
