@@ -6,15 +6,19 @@ is `play-this-measure-tdd.md`; UX context is `play-this-measure-fdd.md`._
 
 ## Where we are
 - **M-1 (dev infrastructure): ✅ complete.** Repo + Vercel auto-deploy + env vars + dormant Neon + installable PWA, verified on Drew's iPhone.
-- **M0 (engine extraction): ✅ complete & signed off.** `tie-rhythm.html` ported into `src/engine/` (`layout.js`, `audio.js`, `renderer.js`, `index.js`) behind `createLab`, driven by the §4 schema; 6 fixtures at **/fixtures.html**; `npm test` (jsdom smoke) green. The last open item (iOS replay/switch playback) is **resolved** — Drew confirmed on 2026-06-08 that both a second play of the same fixture (A) and play-after-switch (B) work.
+- **M0 (engine extraction): ✅ complete & signed off.** `tie-rhythm.html` ported into `src/engine/` (`layout.js`, `audio.js`, `renderer.js`, `index.js`) behind `createLab`, driven by the §4 schema; 7 fixtures at **/fixtures.html**; `npm test` (jsdom smoke) green. iOS playback hardened (see resolved items below).
+- **M1 (renderer proof / geometry): ✅ complete & signed off (2026-06-08).** Clef-aware y-mapping (`yOf(d, clef)` per-clef ladders), clef selection by present voices (no empty staves), the `treble-low` proof fixture, count-row + gridline PAD alignment, and `setMode` mid-play continuity. All confirmed by Drew on the iPhone.
 - **Production:** https://play-this-measure.vercel.app — engine fixtures at **/fixtures.html**.
 - **Dev loop (no laptop needed):** edit → commit → push to `main` → Vercel auto-deploys → open the production URL on the phone. Each branch also gets a Vercel preview. Real data lives on the production URL only (preview URLs have separate on-device storage).
 
 ## OPEN
 None. (Confirmed by Drew on the iPhone, 2026-06-08: **iOS audio context hardening round 2** — `audio.js` `ensureCtx()` keeps the cached context only while actively running and otherwise rebuilds a fresh one inside the play gesture; `dropCtx()` invalidates it; `index.js` arms a 450ms frozen-clock watchdog that drops the context + stops so the next tap rebuilds. Sound is now reliable through fixture switching and leave/return. The round-1 `resume().then(begin)` + `wantPlay` guard remains underneath.)
 
-## In progress: M1 — renderer proof / geometry
-**Done (first pass — Drew confirmed "Low right hand" looks correct on the iPhone, 2026-06-08):**
+## Next milestone: M2 — audio → notation (first Claude API feature)  ← START HERE
+The §10.2 stage prompts turn a recorded/described performance into a §4 NOTATION object the engine already renders. This is the first feature that calls Claude, via the server-only `/api/claude.js` proxy (needs `ANTHROPIC_API_KEY`, set in Vercel; use `vercel dev` to exercise locally). **Plan M2 and show it before implementing; use the §10 prompts verbatim and the §3–4 schemas unchanged (read the `stage-prompts` + `notation-schema` skills first).** Watch the Danny implication: the §10.2 S1 prompt describes chords + ties but not hold-while-strike, which a §5-valid reading may need as two RH voices.
+
+## M1 — renderer proof / geometry (✅ complete, detail)
+**Drew confirmed "Low right hand", count alignment, and mid-play mode switch on the iPhone, 2026-06-08:**
 - **Clef-aware y-mapping.** `renderer.js` no longer uses one pitch-gated ladder; each clef is its own ladder pinned to its top staff line via `yOf(d, clef)` (bands set per render by `setBands`). A right-hand note below middle C now sits on ledgers below the **treble** staff instead of being shoved ~24px into the bass region. Verified byte-identical geometry on the 6 signed-off fixtures (regression guard) — only the previously-broken case moves.
 - **Clef selection by present voices.** `presentClefs()` draws a staff only for a hand that has sounding notes; a bass-only measure no longer paints an empty treble staff, and `staffHeight` is compact unless it's a true grand staff.
 - **New proof fixture `treble-low`** (grand staff, RH descends D4→A3) at /fixtures.html; smoke test adds geometry assertions (RH heads stay in the treble band; bass-only draws a single bass staff). Noteheads now carry `data-hand` for testing/dimming.
