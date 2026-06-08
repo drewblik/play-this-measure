@@ -1,0 +1,77 @@
+/* src/engine/lab.css — styles for createLab output. Ported from tie-rhythm.html,
+   extended for grand staff (clef glyphs, bass), accidentals, rests, muted hands.
+   Assumes the §6 theme tokens are already defined (import styles.css first). */
+
+.lab { font-family: "Newsreader", Georgia, serif; color: var(--ink); }
+
+/* ---- notation ---- */
+.lab-playfield { position: relative; }
+svg.lab-notation { display: block; width: 100%; height: 100px; overflow: visible; }
+
+.staffline { stroke: var(--ink); stroke-width: 1; }
+.ledger { stroke: var(--ink); stroke-width: 1; }
+.barline { stroke: var(--ink); stroke-width: 1.4; }
+.clef { fill: var(--ink); font-family: "Bravura", "Noto Music", serif; }
+.clef-treble { font-size: 42px; }
+.clef-bass { font-size: 34px; }
+.accidental { fill: var(--ink); font-size: 17px; font-family: "Noto Music", serif; }
+.rest { fill: var(--ink); font-size: 26px; font-family: "Noto Music", serif; }
+
+.nh { fill: var(--ink); stroke: none; }
+.nh.tied { fill: var(--paper); stroke: var(--hold); stroke-width: 1.6; } /* hollow blue = written, not re-pressed */
+.nh.lit { fill: var(--attack); }
+.nh.muted { opacity: 0.26; }
+.stem { stroke: var(--ink); stroke-width: 1.4; }
+.beam { stroke: var(--ink); stroke-width: 4; stroke-linecap: butt; }
+.flag { fill: var(--ink); stroke: none; }
+.dot { fill: var(--ink); }
+.ntie { fill: none; stroke: var(--hold); stroke-width: 2; }
+
+/* ---- rhythm blocks ---- */
+.lab-grid {
+  position: relative; height: 120px; border: 1.5px solid var(--ink); border-radius: 8px;
+  margin-top: 6px; overflow: hidden;
+}
+.block { position: absolute; border-radius: 6px; }
+.block .sustain { position: absolute; inset: 0; border-radius: 6px; background: var(--hold-soft); border: 1.5px solid var(--hold); }
+.block.muted { opacity: 0.22; }
+.attack {
+  position: absolute; width: 13px; border-radius: 6px; background: var(--attack);
+  box-shadow: 0 3px 8px -3px rgba(187, 62, 3, .8); z-index: 3;
+}
+.attack::after { content: ""; position: absolute; inset: 0; border-radius: 6px; border: 1.5px solid #fff; opacity: .25; }
+.attack.muted { opacity: 0.18; }
+.attack.flash { animation: ptm-flash .35s ease; }
+@keyframes ptm-flash { 0% { transform: scaleY(1.25); filter: brightness(1.5); } 100% { transform: scaleY(1); } }
+
+/* ---- playhead ---- */
+.lab-playhead {
+  position: absolute; top: 0; bottom: 0; width: 2px; background: var(--gold); z-index: 8;
+  box-shadow: 0 0 10px rgba(154, 123, 34, .6); opacity: 0; transition: opacity .2s;
+}
+.lab-playhead.on { opacity: 1; }
+
+/* ---- counts ---- */
+.lab-countrow { display: grid; margin-top: 7px; }
+.lab-countrow span { text-align: center; font-family: "Fraunces", serif; font-size: 13px; color: var(--ink-soft); }
+.lab-countrow span.beat { color: var(--ink); font-weight: 600; }
+.lab-countrow span.lit { color: var(--attack); font-weight: 600; }
+
+/* ---- press / hold indicator ---- */
+.lab-indicator {
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;
+  margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--rule);
+}
+.lab-press { font-size: 17px; color: var(--ink-soft); }
+.lab-press b { font-family: "Fraunces", serif; font-weight: 900; font-size: 28px; color: var(--attack); vertical-align: -2px; margin: 0 4px; }
+.lab-hand { display: flex; align-items: center; gap: 12px; }
+.lab-dot {
+  min-width: 46px; height: 46px; padding: 0 10px; border-radius: 23px; border: 2px solid var(--rule);
+  background: var(--paper-2); display: flex; align-items: center; justify-content: center;
+  font-family: "Fraunces", serif; font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-soft); transition: all .08s ease;
+}
+.lab-dot.press { background: var(--attack); border-color: var(--attack); color: #fff; transform: scale(1.1); box-shadow: 0 0 22px rgba(187, 62, 3, .55); }
+.lab-dot.hold { background: var(--hold-soft); border-color: var(--hold); color: var(--hold); }
+.lab-handtxt { font-family: "Newsreader", serif; font-size: 15px; color: var(--ink-soft); min-width: 130px; }
+.lab-handtxt b { color: var(--ink); font-weight: 600; }
