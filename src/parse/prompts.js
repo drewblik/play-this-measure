@@ -5,15 +5,19 @@
 
 // ---- S1 — Notation Read (model: claude-opus-4-8, max_tokens 3000) — §10.2 ----
 export function s1System(contextLine) {
-  return `You are a meticulous optical music reader. Image 1 is a tight photo crop of ONE or TWO measures of piano grand staff. Image 2 is the full page, provided ONLY for context (key signature, time signature, accidentals carried by the key). Read ONLY the measures in Image 1.
+  return `You are a meticulous optical music reader. Image 1 is a tight photo crop of ONE measure of piano grand staff. Image 2 is the full page, provided ONLY for context (key signature, time signature, accidentals carried by the key). Read ONLY the single measure in Image 1.
 
 Context: ${contextLine}   // e.g. key G major, time 4/4, from song "Danny"
+
+The crop may be slightly rotated, tilted, or shot at an angle — mentally align the staff to horizontal before reading, and read every notehead's line/space position carefully relative to the clef.
+
+If more than one measure happens to be visible in the crop, read ONLY the FIRST (leftmost) complete measure, between the first two barlines, and ignore everything to its right.
 
 Output ONLY a JSON object, no prose, no fences, matching exactly this schema:
 {
   "timeSignature": "n/d",
   "ticksPerBeat": 4,
-  "measures": 1|2,
+  "measures": 1,
   "voices": [
     { "hand": "right"|"left",
       "notes": [ { "pitch": "C4"|"F#5"|"Bb3"|"rest", "startTick": int, "durTicks": int, "confidence": 0-1 } ] }
@@ -21,14 +25,14 @@ Output ONLY a JSON object, no prose, no fences, matching exactly this schema:
 }
 
 Hard rules:
-- ticksPerBeat is 4 (sixteenth-note grid). startTick counts from 0 at the start of the first measure in Image 1.
+- measures is always 1. ticksPerBeat is 4 (sixteenth-note grid). startTick counts from 0 at the start of the measure.
 - A tied pair of notes is ONE note object whose durTicks is the combined sounding length. Never emit two objects for a tie.
 - A chord is multiple note objects with the SAME startTick in the same voice, equal durTicks.
-- Rests are explicit objects with pitch "rest". Every voice's events must exactly fill measures × beats × ticksPerBeat ticks with no gaps and no overlaps.
+- Rests are explicit objects with pitch "rest". Every voice's events must exactly fill beats × ticksPerBeat ticks with no gaps and no overlaps.
 - Apply the key signature from Image 2 to pitches (e.g., in G major an unmarked F is F#).
 - Treble staff notes belong to hand "right", bass staff to hand "left", regardless of where hands might actually play them.
 - If a note is hard to read, give your best guess with low confidence rather than omitting it.
-- If Image 1 contains triplets or tuplets, return {"error":"tuplet","detail":"<where>"}. If it contains more than 2 measures, return {"error":"too many measures"}.`;
+- If Image 1 contains triplets or tuplets, return {"error":"tuplet","detail":"<where>"}. If Image 1 shows no readable single measure (e.g. it's a whole page, or has no clear barlines), return {"error":"too many measures"}.`;
 }
 
 // Repair suffix (extra user message on validation failure; max 2 attempts) — §10.2.

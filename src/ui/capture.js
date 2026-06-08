@@ -14,7 +14,12 @@ export function mountCapture(app) {
     <a class="backlink" href="#/">← Home</a>
     <div class="eyebrow" style="margin-top:10px">Explain a measure</div>
     <h2 class="view-h">Photograph the measure</h2>
-    <p class="lede">A tight, straight-on crop of <b>1–2 measures</b> — take a photo or pick one from your library. Add a full-page shot too if you can, so I can read the key and time signature.</p>
+    <p class="lede">A tight crop of <b>one measure</b> — take a photo or pick one from your library. Add a full-page shot too if you can, so I can read the key and time signature.</p>
+    <ul class="capture-tips">
+      <li><b>One bar</b> between barlines — not the whole line.</li>
+      <li><b>Straight-on and upright</b> — avoid angles and rotation.</li>
+      <li>Fill the frame; keep the staff lines level.</li>
+    </ul>
 
     <div class="card">
       <label class="filebtn" id="cropBtn">

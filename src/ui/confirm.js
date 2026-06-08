@@ -9,7 +9,7 @@ import { draft } from './flow.js';
 const DECLINE = {
   'not sheet music': "That photo doesn't look like sheet music. Try a clear, straight-on shot of the staff.",
   tuplet: 'This measure has triplets/tuplets, which this version can’t read yet. Try a measure without them.',
-  'too many measures': 'That looks like more than two measures. Crop tighter — one or two bars at a time.',
+  'too many measures': 'I couldn’t pick out a single measure. Crop tighter — one bar, between the barlines.',
 };
 
 export function mountConfirm(app) {

@@ -59,6 +59,13 @@ h1 .em { font-style: italic; font-weight: 500; color: var(--attack); }
   margin-top: 16px;
 }
 .lede b { color: var(--ink); font-weight: 600; }
+.capture-tips {
+  margin: 10px 0 0; padding: 12px 14px 12px 30px;
+  list-style: disc; background: var(--paper-2); border: 1px solid var(--rule);
+  border-radius: 11px; color: var(--ink-soft); font-size: 14px; line-height: 1.55;
+}
+.capture-tips li { margin: 2px 0; }
+.capture-tips b { color: var(--ink); font-weight: 600; }
 
 .card {
   background: linear-gradient(180deg, #fbf6ec, #f1e8d8);
