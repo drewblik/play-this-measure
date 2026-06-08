@@ -2,7 +2,7 @@ import './styles.css';
 
 // Build marker — bumped manually so we can confirm a fresh deploy reached the
 // phone after a push. (The dev loop is: push -> Vercel deploys -> reload phone.)
-const BUILD = 'M-1 · hello-PWA';
+const BUILD = 'M-1 · hello-PWA · 2026-06-07';
 
 // --- Service worker -------------------------------------------------------
 // Registered from the site root so its scope covers the whole app. The M-1
