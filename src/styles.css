@@ -1,0 +1,102 @@
+/* Theme tokens — TDD §6 (port exactly). */
+:root {
+  --paper: #f3ece0;
+  --paper-2: #ece2d2;
+  --ink: #1d1a16;
+  --ink-soft: #5a5147;
+  --rule: #cabfa9;
+  --attack: #bb3e03;
+  --attack-soft: #e9b08e;
+  --hold: #3a6073;
+  --hold-soft: #aac4cf;
+  --gold: #9a7b22;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Newsreader", Georgia, serif;
+  min-height: 100vh;
+}
+
+body {
+  background-image:
+    radial-gradient(120% 90% at 50% -10%, rgba(255, 255, 255, .55), transparent 60%),
+    repeating-linear-gradient(0deg, transparent 0 38px, rgba(0, 0, 0, .012) 38px 39px);
+  /* Phone-first: single centered column, safe-area aware. */
+  padding: max(24px, env(safe-area-inset-top)) clamp(18px, 5vw, 32px) 32px;
+  display: flex;
+  justify-content: center;
+}
+
+#app { width: 100%; max-width: 560px; }
+
+.eyebrow {
+  font-family: "Fraunces", serif;
+  font-weight: 600;
+  letter-spacing: .32em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
+h1 {
+  font-family: "Fraunces", serif;
+  font-weight: 900;
+  font-size: clamp(34px, 9vw, 54px);
+  line-height: .98;
+  letter-spacing: -.015em;
+}
+h1 .em { font-style: italic; font-weight: 500; color: var(--attack); }
+
+.lede {
+  font-size: clamp(16px, 2.4vw, 19px);
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin-top: 16px;
+}
+.lede b { color: var(--ink); font-weight: 600; }
+
+.card {
+  background: linear-gradient(180deg, #fbf6ec, #f1e8d8);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .7) inset, 0 18px 40px -28px rgba(40, 30, 10, .6);
+  padding: clamp(18px, 4vw, 26px);
+  margin-top: 24px;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+.status + .status { margin-top: 10px; }
+.dot {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--rule); flex: 0 0 auto;
+}
+.dot.ok { background: var(--attack); }
+.dot.hold { background: var(--hold); }
+
+.hint {
+  margin-top: 18px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+.hint b { color: var(--ink); font-weight: 600; }
+
+.meta {
+  margin-top: 28px;
+  font-family: "Fraunces", serif;
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--rule);
+}

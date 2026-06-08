@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>How Ties Work — Notation + Rhythm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,900&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3ece0; --paper-2:#ece2d2; --ink:#1d1a16; --ink-soft:#5a5147;
+    --rule:#cabfa9; --attack:#bb3e03; --attack-soft:#e9b08e;
+    --hold:#3a6073; --hold-soft:#aac4cf; --gold:#9a7b22;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--paper);color:var(--ink);font-family:"Newsreader",Georgia,serif}
+  body{
+    min-height:100vh;
+    background-image:
+      radial-gradient(120% 90% at 50% -10%, rgba(255,255,255,.55), transparent 60%),
+      repeating-linear-gradient(0deg, transparent 0 38px, rgba(0,0,0,.012) 38px 39px);
+    padding:clamp(18px,4vw,46px); display:flex; justify-content:center;
+  }
+  .wrap{width:100%;max-width:900px}
+  header.top{margin-bottom:24px}
+  .eyebrow{font-family:"Fraunces",serif;font-weight:600;letter-spacing:.32em;text-transform:uppercase;font-size:12px;color:var(--gold);margin-bottom:8px}
+  h1{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(32px,6.5vw,54px);line-height:.95;letter-spacing:-.015em}
+  h1 .em{font-style:italic;font-weight:500;color:var(--attack)}
+  .lede{font-size:clamp(15px,2.3vw,18px);color:var(--ink-soft);max-width:64ch;margin-top:13px;line-height:1.5}
+  .lede b{color:var(--ink);font-weight:600} .lede i{color:var(--hold);font-style:italic}
+
+  .card{background:linear-gradient(180deg,#fbf6ec,#f1e8d8);border:1px solid var(--rule);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 18px 40px -28px rgba(40,30,10,.6);padding:clamp(16px,3vw,30px);margin-top:22px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end}
+  .ctl-label{font-family:"Fraunces",serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px;display:block}
+  .seg,.tie-toggle{display:flex;flex-wrap:wrap;background:var(--paper-2);border:1px solid var(--rule);border-radius:10px;padding:4px;gap:4px}
+  .seg button,.tie-toggle button{font-family:"Newsreader",serif;font-size:15px;color:var(--ink-soft);background:transparent;border:0;padding:8px 13px;border-radius:7px;cursor:pointer;transition:all .15s ease;white-space:nowrap}
+  .seg button:hover,.tie-toggle button:hover{color:var(--ink)}
+  .seg button.on{background:var(--ink);color:var(--paper);box-shadow:0 4px 12px -6px rgba(0,0,0,.5)}
+  .tie-toggle button.on{color:var(--paper)}
+  .tie-toggle button.on.tie{background:var(--hold)}
+  .tie-toggle button.on.re{background:var(--attack)}
+  .tempo{display:flex;flex-direction:column;min-width:170px;flex:1}
+  .tempo .row{display:flex;align-items:baseline;gap:8px}
+  .tempo input{width:100%;accent-color:var(--attack);cursor:pointer}
+  .bpm-val{font-family:"Fraunces",serif;font-weight:600;font-size:20px}
+  .bpm-val small{font-size:12px;color:var(--ink-soft);font-weight:400;letter-spacing:.1em}
+  .play{font-family:"Fraunces",serif;font-weight:600;font-size:17px;background:var(--attack);color:#fff;border:0;border-radius:11px;padding:13px 26px;cursor:pointer;display:inline-flex;align-items:center;gap:10px;box-shadow:0 10px 22px -12px rgba(187,62,3,.9);transition:transform .12s ease,filter .15s}
+  .play:hover{filter:brightness(1.06)} .play:active{transform:translateY(1px)} .play .ic{font-size:13px}
+
+  .desc{font-size:15px;color:var(--ink-soft);margin:16px 0 14px;line-height:1.5;min-height:1.2em}
+  .desc b{color:var(--ink);font-weight:600} .desc i{color:var(--hold)}
+
+  .stage{margin-top:4px}
+  .field{display:flex;align-items:stretch;gap:0}
+  .clef{flex:0 0 30px;position:relative}
+  .clef svg{position:absolute;left:-2px;top:4px}
+  .content{position:relative;flex:1;min-width:0}
+
+  .beatrow{display:grid;grid-template-columns:repeat(4,1fr);margin-bottom:4px}
+  .beatrow span{font-family:"Fraunces",serif;font-weight:600;font-size:13px;color:var(--ink-soft);text-align:left;padding-left:6px;border-left:2px solid var(--rule)}
+
+  .playfield{position:relative}
+  svg.notation{display:block;width:100%;height:96px;overflow:visible}
+  .staffline{stroke:var(--ink);stroke-width:1}
+  .nh{fill:var(--ink);stroke:none;transform-box:fill-box;transform-origin:center}
+  .nh.tied{fill:var(--paper);stroke:var(--hold);stroke-width:1.6}
+  .nh.lit{fill:var(--attack)}
+  .nh.flash{animation:nflash .35s ease}
+  @keyframes nflash{0%{transform:scale(1.5)}100%{transform:scale(1)}}
+  .stem{stroke:var(--ink);stroke-width:1.4} .beam{stroke:var(--ink);stroke-width:4;stroke-linecap:butt} .flag{fill:var(--ink);stroke:none}
+  .ledger{stroke:var(--ink);stroke-width:1} .dot{fill:var(--ink)}
+  .ntie{fill:none;stroke:var(--hold);stroke-width:2}
+
+  .grid{position:relative;height:120px;border:1.5px solid var(--ink);border-radius:8px;margin-top:6px;
+    background:repeating-linear-gradient(90deg,transparent 0 calc(100%/16 - 1px),rgba(0,0,0,.05) calc(100%/16 - 1px) calc(100%/16));overflow:hidden}
+  .note{position:absolute;border-radius:6px}
+  .note .sustain{position:absolute;inset:0;border-radius:6px;background:var(--hold-soft);border:1.5px solid var(--hold)}
+  .attack{position:absolute;width:13px;border-radius:6px;background:var(--attack);box-shadow:0 3px 8px -3px rgba(187,62,3,.8);z-index:3}
+  .attack::after{content:"";position:absolute;inset:0;border-radius:6px;border:1.5px solid #fff;opacity:.25}
+  .attack.flash{animation:flash .35s ease}
+  @keyframes flash{0%{transform:scaleY(1.25);filter:brightness(1.5)}100%{transform:scaleY(1)}}
+
+  .playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--gold);z-index:8;box-shadow:0 0 10px rgba(154,123,34,.6);opacity:0;transition:opacity .2s}
+  .playhead.on{opacity:1}
+
+  .countrow{display:grid;grid-template-columns:repeat(16,1fr);margin-top:7px}
+  .countrow span{text-align:center;font-family:"Fraunces",serif;font-size:13px;color:var(--ink-soft)}
+  .countrow span.beat{color:var(--ink);font-weight:600}
+  .countrow span.lit{color:var(--attack);font-weight:600}
+
+  .payoff{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-top:20px;padding-top:18px;border-top:1px solid var(--rule)}
+  .presscount{font-family:"Newsreader",serif;font-size:17px;color:var(--ink-soft)}
+  .presscount b{font-family:"Fraunces",serif;font-weight:900;font-size:30px;color:var(--attack);vertical-align:-2px;margin:0 4px}
+  .hand{display:flex;align-items:center;gap:12px}
+  .hand .dot2{min-width:46px;height:46px;padding:0 10px;border-radius:23px;border:2px solid var(--rule);background:var(--paper-2);transition:all .08s ease;display:flex;align-items:center;justify-content:center;font-family:"Fraunces";font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);text-align:center}
+  .hand .dot2.press{background:var(--attack);border-color:var(--attack);color:#fff;transform:scale(1.1);box-shadow:0 0 22px rgba(187,62,3,.55)}
+  .hand .dot2.hold{background:var(--hold-soft);border-color:var(--hold);color:var(--hold)}
+  .hand .txt{font-family:"Newsreader",serif;font-size:15px;color:var(--ink-soft);min-width:130px}
+  .hand .txt b{color:var(--ink);font-weight:600}
+
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:20px;font-size:14px;color:var(--ink-soft)}
+  .legend .it{display:flex;align-items:center;gap:8px}
+  .swatch{width:16px;height:16px;border-radius:50%}
+  .sw-press{background:var(--attack)} .sw-tied{background:var(--paper);border:1.6px solid var(--hold)}
+  .sw-blk{width:18px;height:13px;border-radius:4px;background:var(--hold-soft);border:1.5px solid var(--hold)}
+
+  .note-foot{margin-top:24px;font-size:14px;color:var(--ink-soft);line-height:1.55;max-width:66ch}
+  .note-foot em{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Reading Rhythm · Notation × Blocks</div>
+    <h1>The trick to <span class="em">ties</span></h1>
+    <p class="lede">A <b>tie</b> glues two noteheads of the same pitch into one sound: strike once, hold for the combined length. A tied-into notehead is drawn <i>hollow blue</i> — written, but never re-pressed. The last example shows the tricky case: a tied note you keep holding <b>while new notes are struck on top of it</b>.</p>
+  </header>
+
+  <div class="card">
+    <div class="controls">
+      <div><span class="ctl-label">Example</span>
+        <div class="seg" id="patternSeg">
+          <button data-p="0" class="on">Steady beats</button>
+          <button data-p="1">One tie</button>
+          <button data-p="2">Syncopated</button>
+          <button data-p="3">Tie + chord</button>
+        </div>
+      </div>
+      <div><span class="ctl-label">Hear it as…</span>
+        <div class="tie-toggle" id="tieSeg">
+          <button data-m="tie" class="on tie">Tied (as written)</button>
+          <button data-m="re">Re-struck</button>
+        </div>
+      </div>
+      <div class="tempo"><span class="ctl-label">Tempo</span>
+        <div class="row"><span class="bpm-val"><span id="bpmNum">60</span> <small>BPM</small></span></div>
+        <input id="tempo" type="range" min="40" max="100" value="60" step="2">
+      </div>
+      <button class="play" id="play"><span class="ic" id="playIc">▶</span><span id="playTxt">Play</span></button>
+    </div>
+
+    <p class="desc" id="desc"></p>
+
+    <div class="stage">
+      <div class="field">
+        <div class="clef"><svg width="32" height="96" viewBox="0 0 32 96"><text x="0" y="74" font-size="64" fill="#1d1a16" font-family="serif">&#x1D11E;</text></svg></div>
+        <div class="content">
+          <div class="beatrow"><span>1</span><span>2</span><span>3</span><span>4</span></div>
+          <div class="playfield" id="playfield">
+            <svg class="notation" id="notation"></svg>
+            <div class="grid" id="grid"></div>
+            <div class="playhead" id="playhead"></div>
+          </div>
+          <div class="countrow" id="countrow"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="payoff">
+      <div class="presscount">Keys you press this measure: <b id="pressN">4</b></div>
+      <div class="hand">
+        <div class="dot2" id="handDot">—</div>
+        <div class="txt" id="handTxt">Press <b>Play</b> to follow along</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="it"><span class="swatch sw-press"></span> Notehead you strike</div>
+      <div class="it"><span class="swatch sw-tied"></span> Tied-into note — held, never re-pressed</div>
+      <div class="it"><span class="sw-blk"></span> Block = how long the key stays down</div>
+    </div>
+  </div>
+
+  <p class="note-foot">The <em>Tie + chord</em> example is the one from your screenshots: the top note is tied (blue — keep holding it), and on beat 3 two fresh notes appear beneath it that you strike together. In the blocks you'll see the top row keep holding while two new rows begin. Toggle <em>Re-struck</em> to hear the wrong version where you'd re-hit the held note. Play slow, count <em>"1 e &amp; a"</em>, and at beat 3 think "hold one, press two."</p>
+</div>
+
+<script>
+(function(){
+  const F4=349.23,A4=440.00,B4=493.88,C5=523.25,D5=587.33,E5=659.25,F5=698.46,G5=783.99,A5=880.00,B5=987.77;
+  const STEP={[F4]:3,[A4]:5,[B4]:6,[C5]:7,[D5]:8,[E5]:9,[F5]:10,[G5]:11,[A5]:12,[B5]:13};
+
+  const PATTERNS=[
+    { desc:'<b>Steady quarter notes.</b> One press per beat, nothing tied — Tied and Re-struck are identical. Your reference point.',
+      notes:[{s:0,l:4,f:E5},{s:4,l:4,f:G5},{s:8,l:4,f:E5},{s:12,l:4,f:D5}] },
+    { desc:'<b>One tie.</b> Beat 2 is tied across beat 3 — the arc joins them. In Tied, beat 3’s notehead is <i>blue</i>: written but not struck. Re-struck makes it solid so you hear the difference.',
+      notes:[{s:0,l:4,f:G5},{s:4,l:6,f:E5},{s:10,l:2,f:D5},{s:12,l:4,f:C5}] },
+    { desc:'<b>Syncopated.</b> Two ties pull notes across beats 2 and 4, so your presses land on the <i>“a”</i> after the beat. That lopsided pull is what trips people up.',
+      notes:[{s:0,l:2,f:G5},{s:2,l:3,f:A5},{s:5,l:1,f:G5},{s:6,l:2,f:E5},{s:8,l:2,f:G5},{s:10,l:3,f:A5},{s:13,l:3,f:G5}] },
+    { desc:'<b>Tie + chord — your sticking point.</b> The top note is struck on beat 2 and <i>tied</i> across beat 3 (the blue notehead — keep holding it). On beat 3, two <b>new</b> notes appear beneath it: those you strike. So at beat 3 — <b>hold the blue one, press the two solid ones together.</b>',
+      notes:[{s:0,l:4,f:G5},{s:4,l:8,f:E5},{s:8,l:4,f:C5},{s:8,l:4,f:A4},{s:12,l:4,f:D5}] }
+  ];
+  const COUNT=['1','e','&','a','2','e','&','a','3','e','&','a','4','e','&','a'];
+  const SVGNS='http://www.w3.org/2000/svg';
+
+  let patIdx=0, mode='tie', bpm=60, isPlaying=false, ctx=null;
+
+  const grid=document.getElementById('grid');
+  const notation=document.getElementById('notation');
+  const countrow=document.getElementById('countrow');
+  const playhead=document.getElementById('playhead');
+  const pressN=document.getElementById('pressN');
+  const descEl=document.getElementById('desc');
+  const handDot=document.getElementById('handDot');
+  const handTxt=document.getElementById('handTxt');
+
+  COUNT.forEach((c,i)=>{const s=document.createElement('span');s.textContent=c;if(i%4===0)s.classList.add('beat');countrow.appendChild(s);});
+
+  const PAD=0.045;
+  const mapFrac=t=> PAD + (1-PAD)*(t/16);
+  function el(tag,attrs){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;}
+
+  function audioSegs(note){
+    if(mode==='tie') return [{s:note.s,l:note.l,f:note.f}];
+    const out=[];let cur=note.s;const end=note.s+note.l;
+    while(cur<end){const nb=(Math.floor(cur/4)+1)*4,se=Math.min(nb,end);out.push({s:cur,l:se-cur,f:note.f});cur=se;}
+    return out;
+  }
+  function notationSegs(note){
+    const out=[];let cur=note.s;const end=note.s+note.l;
+    while(cur<end){const nb=(Math.floor(cur/4)+1)*4,se=Math.min(nb,end);out.push({s:cur,l:se-cur,f:note.f});cur=se;}
+    return out;
+  }
+
+  let attackList=[], noteHeads=[];
+  const struckNote=(tick,freq)=> attackList.some(a=>a.tick===tick && a.f===freq);
+
+  const SP=9, yF5=30;
+  const yOf=p=> yF5 + (10-p)/2*SP;
+
+  // overlap-based lane assignment so chords stack into rows; monophonic stays one row
+  function assignLanes(notes){
+    const lanes=[]; const laneByI={};
+    notes.map((n,i)=>({n,i})).sort((a,b)=>a.n.s-b.n.s).forEach(({n,i})=>{
+      let li=0;
+      for(; li<lanes.length; li++){
+        if(lanes[li].every(m=> n.s>=m.s+m.l || n.s+n.l<=m.s)){ lanes[li].push(n); break; }
+      }
+      if(li===lanes.length) lanes.push([n]);
+      laneByI[i]=li;
+    });
+    return {nLanes:lanes.length||1, laneByI};
+  }
+
+  function buildBlocks(){
+    [...grid.querySelectorAll('.note,.attack')].forEach(n=>n.remove());
+    attackList=[];let presses=0;
+    const notes=PATTERNS[patIdx].notes;
+    const {nLanes,laneByI}=assignLanes(notes);
+    const top0=12, usable=96, laneH=usable/nLanes, bh=Math.min(26, laneH-6);
+    const laneTop=lane=> top0 + lane*laneH + (laneH-bh)/2;
+    notes.forEach((note,ni)=>{
+      const top=laneTop(laneByI[ni]);
+      const bar=document.createElement('div');bar.className='note';
+      bar.style.left=(mapFrac(note.s)*100)+'%';
+      bar.style.width=((1-PAD)*note.l/16*100)+'%';
+      bar.style.top=top+'px'; bar.style.height=bh+'px';
+      const sus=document.createElement('div');sus.className='sustain';bar.appendChild(sus);grid.appendChild(bar);
+      audioSegs(note).forEach(seg=>{
+        const a=document.createElement('div');a.className='attack';
+        a.style.left=(mapFrac(seg.s)*100)+'%';a.style.top=top+'px';a.style.height=bh+'px';a.dataset.tick=seg.s;
+        grid.appendChild(a);attackList.push({tick:seg.s,f:seg.f,len:seg.l,el:a});presses++;
+      });
+    });
+    pressN.textContent=presses;
+  }
+
+  function placeNotehead(x,y,struck){
+    const g=el('g',{transform:`rotate(-18 ${x} ${y})`});
+    const nh=el('ellipse',{cx:x,cy:y,rx:6.2,ry:4.5,class:'nh'});
+    if(!struck) nh.classList.add('tied');
+    g.appendChild(nh); notation.appendChild(g);
+    return nh;
+  }
+  function ledgers(x,p){ for(let lp=12; lp<=p; lp+=2){ notation.appendChild(el('line',{x1:x-9,y1:yOf(lp),x2:x+9,y2:yOf(lp),class:'ledger'})); } }
+
+  function drawNote(sg,beamY,xAt){
+    const p=STEP[sg.f], x=xAt(sg.s), y=yOf(p);
+    ledgers(x,p);
+    const struck=struckNote(sg.s,sg.f);
+    const nh=placeNotehead(x,y,struck);
+    noteHeads.push({tick:sg.s,struck,el:nh});
+    const sx=x-5, sb = beamY!=null? beamY : y+30;
+    notation.appendChild(el('line',{x1:sx,y1:y,x2:sx,y2:sb,class:'stem'}));
+    if(sg.l===3){ notation.appendChild(el('circle',{cx:x+11,cy:y-2,r:1.9,class:'dot'})); }
+    if(beamY==null && sg.l<4){ drawFlag(sx,sb,sg.l); }
+  }
+  function drawFlag(sx,sb,len){
+    notation.appendChild(el('path',{d:`M ${sx} ${sb} q 9 3 8 14 q -1 -8 -8 -10 z`,class:'flag'}));
+    if(len===1){ notation.appendChild(el('path',{d:`M ${sx} ${sb-7} q 9 3 8 14 q -1 -8 -8 -10 z`,class:'flag'})); }
+  }
+  function drawGroup(group,xAt){
+    if(group.length===1){ drawNote(group[0],null,xAt); return; }
+    let maxY=-1e9; group.forEach(g=> maxY=Math.max(maxY,yOf(STEP[g.f])));
+    const beamY=maxY+30;
+    group.forEach(g=> drawNote(g,beamY,xAt));
+    const xA=xAt(group[0].s)-5, xB=xAt(group[group.length-1].s)-5;
+    notation.appendChild(el('line',{x1:xA,y1:beamY,x2:xB,y2:beamY,class:'beam'}));
+    group.forEach((g,idx)=>{
+      if(g.l!==1) return;
+      const x=xAt(g.s)-5; const hasLeft=idx>0;
+      const nbr = hasLeft? group[idx-1] : group[idx+1]||g;
+      const nx = xAt(nbr.s)-5;
+      const stub = Math.min(14, Math.abs(nx-x)/2) || 10;
+      const dir = hasLeft? -1 : 1;
+      notation.appendChild(el('line',{x1:x,y1:beamY-7,x2:x+dir*stub,y2:beamY-7,class:'beam'}));
+    });
+  }
+  function drawChord(tick, segs, xAt){
+    const x=xAt(tick);
+    const ys=segs.map(s=>yOf(STEP[s.f]));
+    const topY=Math.min(...ys), botY=Math.max(...ys);
+    notation.appendChild(el('line',{x1:x-5,y1:topY,x2:x-5,y2:botY+30,class:'stem'}));
+    segs.forEach(s=>{
+      const p=STEP[s.f], y=yOf(p);
+      ledgers(x,p);
+      const struck=struckNote(s.s,s.f);
+      const nh=placeNotehead(x,y,struck);
+      noteHeads.push({tick:s.s,struck,el:nh});
+    });
+  }
+
+  function renderNotation(){
+    const width=notation.getBoundingClientRect().width || 700;
+    notation.innerHTML='';noteHeads=[];
+    const xAt=t=> mapFrac(t)*width;
+    [10,8,6,4,2].forEach(p=> notation.appendChild(el('line',{x1:0,y1:yOf(p),x2:width,y2:yOf(p),class:'staffline'})));
+
+    const pat=PATTERNS[patIdx];
+    let segAll=[];
+    pat.notes.forEach((note)=> notationSegs(note).forEach(sg=> segAll.push({...sg})));
+    const byTick={}; segAll.forEach(s=>{ (byTick[s.s]=byTick[s.s]||[]).push(s); });
+    Object.keys(byTick).filter(t=>byTick[t].length>1).forEach(t=> drawChord(+t, byTick[t], xAt));
+
+    const singles=segAll.filter(s=> byTick[s.s].length===1).sort((a,b)=>a.s-b.s);
+    let i=0;
+    while(i<singles.length){
+      const sg=singles[i];
+      if(sg.l>=4){ drawNote(sg,null,xAt); i++; continue; }
+      const beat=Math.floor(sg.s/4); const group=[sg]; let j=i+1;
+      while(j<singles.length && singles[j].l<4 && Math.floor(singles[j].s/4)===beat){ group.push(singles[j]); j++; }
+      drawGroup(group,xAt); i=j;
+    }
+
+    if(mode==='tie'){
+      pat.notes.forEach((note)=>{
+        const segs=notationSegs(note);
+        for(let k=0;k<segs.length-1;k++){
+          const x1=xAt(segs[k].s), x2=xAt(segs[k+1].s), y=yOf(STEP[note.f])-9, mx=(x1+x2)/2;
+          notation.appendChild(el('path',{d:`M ${x1+5} ${y} Q ${mx} ${y-9} ${x2-5} ${y}`,class:'ntie'}));
+        }
+      });
+    }
+  }
+
+  function renderAll(){ descEl.innerHTML=PATTERNS[patIdx].desc; buildBlocks(); renderNotation(); }
+
+  function ensureCtx(){if(!ctx)ctx=new (window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();}
+  function click(t,acc){const o=ctx.createOscillator(),g=ctx.createGain();o.type='square';o.frequency.value=acc?1500:900;
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(acc?0.12:0.05,t+0.001);g.gain.exponentialRampToValueAtTime(0.0001,t+0.04);
+    o.connect(g).connect(ctx.destination);o.start(t);o.stop(t+0.05);}
+  function tone(t,freq,dur){
+    const pk=0.15, rel=Math.min(0.10,dur*0.3), holdEnd=t+Math.max(0.04,dur-rel);
+    const o=ctx.createOscillator(),g=ctx.createGain();o.type='triangle';o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(pk,t+0.012);
+    g.gain.setValueAtTime(pk,holdEnd);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    const o2=ctx.createOscillator(),g2=ctx.createGain();o2.type='sine';o2.frequency.value=freq*2;
+    g2.gain.setValueAtTime(0.0001,t);g2.gain.exponentialRampToValueAtTime(pk*0.18,t+0.012);
+    g2.gain.setValueAtTime(pk*0.18,holdEnd);g2.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g).connect(ctx.destination);o2.connect(g2).connect(ctx.destination);
+    o.start(t);o2.start(t);o.stop(t+dur+0.03);o2.stop(t+dur+0.03);
+  }
+
+  let nextTick=0,nextTime=0,sched=[],rafId=null,timer=null;
+  const LOOKAHEAD=0.1,INTERVAL=25;
+  const secPer16=()=> (60/bpm)/4;
+  function scheduler(){
+    while(nextTime<ctx.currentTime+LOOKAHEAD){
+      const tick=nextTick%16,sp=secPer16();
+      if(tick%4===0) click(nextTime,tick===0);
+      attackList.forEach(a=>{ if(a.tick===tick) tone(nextTime,a.f,a.len*sp*0.98); });
+      sched.push({tick,time:nextTime,sp});nextTime+=sp;nextTick++;
+    }
+    const now=ctx.currentTime; sched=sched.filter(s=>s.time>now-1.0);
+  }
+  function animate(){
+    if(!isPlaying)return;
+    const now=ctx.currentTime; let cur=null;
+    for(let i=sched.length-1;i>=0;i--){ if(sched[i].time<=now){cur=sched[i];break;} }
+    if(cur){
+      const frac=(now-cur.time)/cur.sp; let pos=(cur.tick+Math.min(frac,1))/16; pos=((pos%1)+1)%1;
+      playhead.style.left=(mapFrac(pos*16)*100)+'%';
+      const liveTick=cur.tick;
+      [...countrow.children].forEach((c,i)=>c.classList.toggle('lit',i===liveTick));
+      const hits=attackList.filter(a=>a.tick===liveTick), justHit=frac<0.45;
+      noteHeads.forEach(n=>n.el.classList.remove('lit'));
+      if(hits.length && justHit){
+        const n=hits.length>1?('Press '+hits.length):'Press';
+        handDot.className='dot2 press';handDot.textContent='PRESS';
+        handTxt.innerHTML= hits.length>1? '<b>Press '+hits.length+'</b> keys together' : '<b>Press</b> — strike now';
+        hits.forEach(a=>{a.el.classList.remove('flash');void a.el.offsetWidth;a.el.classList.add('flash');});
+        noteHeads.filter(n=>n.tick===liveTick&&n.struck).forEach(n=>{n.el.classList.add('lit');n.el.classList.remove('flash');void n.el.getBoundingClientRect();n.el.classList.add('flash');});
+      } else {
+        const holding=attackList.some(a=>a.tick<=liveTick&&a.tick+a.len>liveTick);
+        if(holding){handDot.className='dot2 hold';handDot.textContent='hold';handTxt.innerHTML='<b>Hold</b> — keep the key down';}
+        else{handDot.className='dot2';handDot.textContent='—';handTxt.innerHTML='rest';}
+      }
+    }
+    rafId=requestAnimationFrame(animate);
+  }
+  function start(){ensureCtx();isPlaying=true;nextTick=0;nextTime=ctx.currentTime+0.12;sched=[];
+    timer=setInterval(scheduler,INTERVAL);scheduler();playhead.classList.add('on');
+    document.getElementById('playIc').textContent='■';document.getElementById('playTxt').textContent='Stop';rafId=requestAnimationFrame(animate);}
+  function stop(){isPlaying=false;clearInterval(timer);if(rafId)cancelAnimationFrame(rafId);
+    playhead.classList.remove('on');document.getElementById('playIc').textContent='▶';document.getElementById('playTxt').textContent='Play';
+    [...countrow.children].forEach(c=>c.classList.remove('lit'));noteHeads.forEach(n=>n.el.classList.remove('lit'));
+    handDot.className='dot2';handDot.textContent='—';handTxt.innerHTML='Press <b>Play</b> to follow along';}
+
+  document.getElementById('play').addEventListener('click',()=> isPlaying?stop():start());
+  document.getElementById('patternSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    [...e.currentTarget.children].forEach(x=>x.classList.remove('on'));b.classList.add('on');patIdx=+b.dataset.p;renderAll();});
+  document.getElementById('tieSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    [...e.currentTarget.children].forEach(x=>x.classList.remove('on','tie','re'));mode=b.dataset.m;b.classList.add('on',mode==='tie'?'tie':'re');renderAll();});
+  document.getElementById('tempo').addEventListener('input',e=>{bpm=+e.target.value;document.getElementById('bpmNum').textContent=bpm;if(isPlaying){stop();start();}});
+
+  let rt; window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(renderNotation,120);});
+  renderAll();
+  setTimeout(renderNotation,250);
+})();
+</script>
+</body>
+</html>
