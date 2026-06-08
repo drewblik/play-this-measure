@@ -20,7 +20,11 @@ export function el(tag, attrs) {
 // below, C4 floating on a ledger between them (TDD §7). Top padding leaves room
 // for ledger lines above the treble.
 const TOP_Y = 28;
-const yOf = (d) => TOP_Y + (TREBLE_TOP_DIATONIC - d) * (SP / 2);
+const GRAND_GAP = 24; // extra vertical space between treble and bass staves
+let GRAND = false;    // set per render (renderStaff/clefPositions); gates the gap
+// Continuous diatonic ladder; on a grand staff everything below middle C (the
+// bass region) is pushed down by GRAND_GAP so the two staves don't cram together.
+const yOf = (d) => TOP_Y + (TREBLE_TOP_DIATONIC - d) * (SP / 2) + (GRAND && d < 28 ? GRAND_GAP : 0);
 const HALF = SP / 2;
 
 const CLEF = { treble: '\u{1D11E}', bass: '\u{1D122}' }; // 𝄞 𝄢
@@ -34,17 +38,19 @@ function hasBass(notation) {
   return notation.voices.some((v) => v.hand === 'left' && v.notes.length);
 }
 
-// Total SVG height: taller when a bass staff is present.
+// Total SVG height: taller when a bass staff is present, with margin below the
+// bass stems before the rhythm grid.
 export function staffHeight(notation) {
-  return hasBass(notation) ? 150 : 78;
+  return hasBass(notation) ? 176 : 86;
 }
 
 // Clef glyph placements. Drawn by createLab in a left column OUTSIDE the SVG so
 // they never overlap the first notes. centerY is the SVG y the glyph centers on
 // (createLab positions it with translateY(-50%)).
 export function clefPositions(notation) {
+  GRAND = hasBass(notation);
   const out = [{ clef: 'treble', glyph: CLEF.treble, centerY: yOf(34), size: 52 }];
-  if (hasBass(notation)) out.push({ clef: 'bass', glyph: CLEF.bass, centerY: yOf(22), size: 38 });
+  if (GRAND) out.push({ clef: 'bass', glyph: CLEF.bass, centerY: yOf(22), size: 38 });
   return out;
 }
 
@@ -217,6 +223,7 @@ function renderVoice(svg, voice, notation, mode, xAt, heads) {
 
 // Draw the full grand staff into `svg`. Returns { heads, width }.
 export function renderStaff(svg, notation, { mode }) {
+  GRAND = hasBass(notation);
   svg.innerHTML = '';
   const total = totalTicks(notation);
   const width = svg.getBoundingClientRect().width || 700;

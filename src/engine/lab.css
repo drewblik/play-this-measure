@@ -36,7 +36,7 @@ svg.lab-notation { display: block; width: 100%; height: 100px; overflow: visible
 /* ---- rhythm blocks ---- */
 .lab-grid {
   position: relative; height: 120px; border: 1.5px solid var(--ink); border-radius: 8px;
-  margin-top: 6px; overflow: hidden;
+  margin-top: 14px; overflow: hidden;
 }
 .block { position: absolute; border-radius: 6px; }
 .block .sustain { position: absolute; inset: 0; border-radius: 6px; background: var(--hold-soft); border: 1.5px solid var(--hold); }
