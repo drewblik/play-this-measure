@@ -47,5 +47,54 @@ for (const fx of FIXTURES) {
   lab.destroy();
 }
 
+// ---- M1 geometry checks (clef-aware y-mapping + clef selection) ----
+// Reference y's from renderer.js: treble bottom line E4 = 64; bass band top = 106.
+const TREBLE_STAFF_BOTTOM = 64;
+const BASS_BAND_TOP = 106;
+const cy = (nh) => +nh.getAttribute('cy');
+
+// treble-low: every right-hand head stays in the TREBLE band (the old single-
+// ladder mapping shoved B3/A3 down to ~106 onto the bass staff), and at least one
+// dips below the treble staff bottom line so the below-middle-C case is exercised.
+{
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  const fx = FIXTURES.find((f) => f.id === 'treble-low');
+  const lab = createLab(host, { notation: fx.notation, tempoBpm: 60, mode: 'tie', hands: 'both' });
+  const rh = [...host.querySelectorAll('.nh[data-hand="right"]')].map(cy);
+  const lh = [...host.querySelectorAll('.nh[data-hand="left"]')].map(cy);
+  const ok = rh.length === 4 && lh.length === 4
+    && rh.every((y) => y < BASS_BAND_TOP - 6)      // not pushed onto the bass staff
+    && rh.some((y) => y > TREBLE_STAFF_BOTTOM)      // actually below the treble staff
+    && lh.every((y) => y >= BASS_BAND_TOP);         // bass voice really is in the bass band
+  console.log(`${ok ? 'PASS' : 'FAIL'} treble-low (geometry)   RH cy=[${rh.join(', ')}] LH cy=[${lh.join(', ')}]`);
+  if (!ok) fail('treble-low: a right-hand note below middle C is not in the treble band');
+  lab.destroy();
+}
+
+// clef selection: a bass-only measure draws ONLY the bass staff (5 lines, one
+// clef glyph) near the top — not an empty treble staff above it.
+{
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  const notation = {
+    timeSignature: '4/4', ticksPerBeat: 4, measures: 1,
+    voices: [{ hand: 'left', notes: [
+      { pitch: 'C3', startTick: 0, durTicks: 4, confidence: 1 },
+      { pitch: 'E3', startTick: 4, durTicks: 4, confidence: 1 },
+      { pitch: 'G3', startTick: 8, durTicks: 4, confidence: 1 },
+      { pitch: 'C3', startTick: 12, durTicks: 4, confidence: 1 },
+    ] }],
+  };
+  const lab = createLab(host, { notation, tempoBpm: 60, mode: 'tie', hands: 'both' });
+  const lines = host.querySelectorAll('.lab-notation .staffline').length;
+  const clefGlyphs = host.querySelectorAll('.lab-clef').length;
+  const topLine = Math.min(...[...host.querySelectorAll('.lab-notation .staffline')].map((l) => +l.getAttribute('y1')));
+  const ok = lines === 5 && clefGlyphs === 1 && topLine < BASS_BAND_TOP;
+  console.log(`${ok ? 'PASS' : 'FAIL'} bass-only (clef select) stafflines=${lines} clefs=${clefGlyphs} topLine=${topLine}`);
+  if (!ok) fail('bass-only: expected a single bass staff near the top (no empty treble staff)');
+  lab.destroy();
+}
+
 console.log(failures ? `\n${failures} FAILURE(S)` : '\nALL PASS');
 process.exit(failures ? 1 : 0);

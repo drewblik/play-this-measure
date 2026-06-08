@@ -13,8 +13,13 @@ is `play-this-measure-tdd.md`; UX context is `play-this-measure-fdd.md`._
 ## OPEN
 None. (Resolved last session: iOS "stuck after replay/switch" — the fix in `index.js` `start()` defers scheduling into `ctx.resume().then(begin)` with a `wantPlay` guard, and `ensureCtx` resumes from any non-running state. Drew's A/B test on the iPhone confirmed both replay and play-after-switch on 2026-06-08.)
 
-## Next milestone: M1 — renderer proof / geometry  ← START HERE
-First task: **clef-aware y-mapping.** `renderer.js` `yOf()` applies the grand-staff `GRAND_GAP` based on diatonic `d < 28` (below middle C), NOT on which clef/voice owns the note — so a right-hand note below middle C (B3/A3/middle-C area) drops ~24px into the bass region. No fixture triggers it, but real music will at M2/M6. Make the y-mapping clef/voice-aware. Then: precise note-on-line placement, clef vertical centering, inter-staff spacing, screenshot-compare against fixtures. Also: clef selection by present voices (a bass-only measure currently draws an empty treble staff). Lower priority: compound-meter count labels; grid/countrow PAD alignment; `setMode` restarting transport while playing.
+## In progress: M1 — renderer proof / geometry
+**Done (first pass, awaiting Drew's on-device review):**
+- **Clef-aware y-mapping.** `renderer.js` no longer uses one pitch-gated ladder; each clef is its own ladder pinned to its top staff line via `yOf(d, clef)` (bands set per render by `setBands`). A right-hand note below middle C now sits on ledgers below the **treble** staff instead of being shoved ~24px into the bass region. Verified byte-identical geometry on the 6 signed-off fixtures (regression guard) — only the previously-broken case moves.
+- **Clef selection by present voices.** `presentClefs()` draws a staff only for a hand that has sounding notes; a bass-only measure no longer paints an empty treble staff, and `staffHeight` is compact unless it's a true grand staff.
+- **New proof fixture `treble-low`** (grand staff, RH descends D4→A3) at /fixtures.html; smoke test adds geometry assertions (RH heads stay in the treble band; bass-only draws a single bass staff). Noteheads now carry `data-hand` for testing/dimming.
+
+**Remaining M1:** precise note-on-line placement / clef vertical-centering polish; inter-staff spacing review. Lower priority: compound-meter count labels; grid/countrow PAD alignment; `setMode` restarting transport while playing.
 
 ## Key decisions & findings
 - **Danny tie+chord** is modeled as **two right-hand voices** (§5 forbids within-voice overlap; "hold one note while striking others at a different tick" is polyphony, not a chord). Implication for **M2**: the §10.2 S1 prompt only describes chords + ties, not hold-while-strike — producing a §5-valid reading may need two RH voices. **Do not edit the verbatim §10 prompts without Drew.**

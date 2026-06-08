@@ -108,6 +108,30 @@ export const FIXTURES = [
     },
   },
   {
+    id: 'treble-low',
+    name: 'Low right hand',
+    blurb: 'Right hand descends below middle C — B3/A3 sit on ledger lines BELOW the treble staff (not on the bass staff). M1 clef-aware y-mapping proof.',
+    notation: {
+      timeSignature: '4/4', ticksPerBeat: 4, measures: 1,
+      voices: [
+        // Right hand crosses middle C into the ledger region below the treble staff.
+        { hand: 'right', notes: [
+          { pitch: 'D4', startTick: 0, durTicks: 4, confidence: 1 },
+          { pitch: 'C4', startTick: 4, durTicks: 4, confidence: 1 },
+          { pitch: 'B3', startTick: 8, durTicks: 4, confidence: 1 },
+          { pitch: 'A3', startTick: 12, durTicks: 4, confidence: 1 },
+        ] },
+        // Left hand keeps it a grand staff (so the treble band has a bass band below it).
+        { hand: 'left', notes: [
+          { pitch: 'C3', startTick: 0, durTicks: 4, confidence: 1 },
+          { pitch: 'G3', startTick: 4, durTicks: 4, confidence: 1 },
+          { pitch: 'C3', startTick: 8, durTicks: 4, confidence: 1 },
+          { pitch: 'G3', startTick: 12, durTicks: 4, confidence: 1 },
+        ] },
+      ],
+    },
+  },
+  {
     id: 'rests-accidentals',
     name: 'Rests · accidentals · dotted',
     blurb: 'Sharp, flat, a dotted eighth + sixteenth, an eighth rest and a quarter rest.',
