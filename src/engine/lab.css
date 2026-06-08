@@ -40,6 +40,7 @@ svg.lab-notation { display: block; width: 100%; overflow: visible; } /* height s
   position: relative; height: 120px; border: 1.5px solid var(--ink); border-radius: 8px;
   margin-top: 14px; overflow: hidden;
 }
+.lab-gridlines { position: absolute; top: 0; bottom: 0; right: 0; pointer-events: none; } /* left set inline = PAD */
 .block { position: absolute; border-radius: 6px; }
 .block .sustain { position: absolute; inset: 0; border-radius: 6px; background: var(--hold-soft); border: 1.5px solid var(--hold); }
 .block.muted { opacity: 0.22; }
@@ -59,9 +60,9 @@ svg.lab-notation { display: block; width: 100%; overflow: visible; } /* height s
 }
 .lab-playhead.on { opacity: 1; }
 
-/* ---- counts ---- */
-.lab-countrow { display: grid; margin-top: 7px; }
-.lab-countrow span { text-align: center; font-family: "Fraunces", serif; font-size: 13px; color: var(--ink-soft); }
+/* ---- counts (each label absolutely positioned under its tick, PAD-aware) ---- */
+.lab-countrow { position: relative; height: 18px; margin-top: 7px; }
+.lab-countrow span { position: absolute; transform: translateX(-50%); white-space: nowrap; font-family: "Fraunces", serif; font-size: 13px; color: var(--ink-soft); }
 .lab-countrow span.beat { color: var(--ink); font-weight: 600; }
 .lab-countrow span.lit { color: var(--attack); font-weight: 600; }
 

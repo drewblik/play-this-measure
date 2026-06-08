@@ -56,7 +56,6 @@ export function createLab(container, opts) {
     const total = totalTicks(notation);
     const tpm = ticksPerMeasure(notation.timeSignature, notation.ticksPerBeat);
     const sub = ['', 'e', '&', 'a']; // sixteenth grid
-    countrow.style.gridTemplateColumns = `repeat(${total}, 1fr)`;
     countrow.innerHTML = '';
     countCells = [];
     for (let t = 0; t < total; t++) {
@@ -66,6 +65,7 @@ export function createLab(container, opts) {
       const span = document.createElement('span');
       span.textContent = subIdx === 0 ? String(beat) : sub[subIdx] || '';
       if (subIdx === 0) span.classList.add('beat');
+      span.style.left = mapFrac(t, total) * 100 + '%'; // sit under the note at this tick (PAD-aware)
       countrow.appendChild(span);
       countCells.push(span);
     }
@@ -234,7 +234,7 @@ export function createLab(container, opts) {
     play() { if (!isPlaying) start(); },
     stop() { stop(); },
     setTempo(b) { bpm = b; restartIfPlaying(); },
-    setMode(m) { mode = m; render(); restartIfPlaying(); },
+    setMode(m) { mode = m; render(); }, // render() rebuilds visuals + the attack list; the live scheduler picks up the new mode without restarting from the top
     setHands(h) { hands = h; rebuildAudio(); applyHandsDim(); restartIfPlaying(); },
     destroy() {
       stop();

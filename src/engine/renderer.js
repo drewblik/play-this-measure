@@ -341,7 +341,12 @@ export function buildBlocks(grid, notation, { mode }) {
   });
 
   grid.style.height = Math.max(96, nLanes * 30) + 'px';
-  grid.style.background =
+  // Tick gridlines live on a child inset by PAD on the left (right edge flush), so
+  // its own 100%/total columns land exactly under the PAD-shifted notes/attacks.
+  let lines = grid.querySelector('.lab-gridlines');
+  if (!lines) { lines = document.createElement('div'); lines.className = 'lab-gridlines'; grid.prepend(lines); }
+  lines.style.left = PAD * 100 + '%';
+  lines.style.background =
     `repeating-linear-gradient(90deg, transparent 0 calc(100%/${total} - 1px), rgba(0,0,0,.05) calc(100%/${total} - 1px) calc(100%/${total}))`;
   return { attackEls, sustainEls, nLanes, pressCount };
 }

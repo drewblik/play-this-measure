@@ -96,5 +96,28 @@ const cy = (nh) => +nh.getAttribute('cy');
   lab.destroy();
 }
 
+// PAD alignment: count labels and the gridlines layer share the notes' PAD-aware
+// mapping, so "1 e & a ..." sits under each note instead of drifting.
+{
+  const { mapFrac, PAD, totalTicks } = await import('../src/engine/layout.js');
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  const fx = FIXTURES.find((f) => f.id === 'steady');
+  const lab = createLab(host, { notation: fx.notation, tempoBpm: 60, mode: 'tie', hands: 'both' });
+  const total = totalTicks(fx.notation);
+  const spans = [...host.querySelectorAll('.lab-countrow span')];
+  const firstLeft = spans[0]?.style.left;
+  const beat2Left = spans[4]?.style.left;                 // tick 4 = beat 2
+  const gridlines = host.querySelector('.lab-gridlines');
+  const near = (a, b) => Math.abs(parseFloat(a) - b) < 0.01;
+  const ok = spans.length === total
+    && near(firstLeft, mapFrac(0, total) * 100)
+    && near(beat2Left, mapFrac(4, total) * 100)
+    && gridlines && near(gridlines.style.left, PAD * 100);
+  console.log(`${ok ? 'PASS' : 'FAIL'} count/grid PAD-align  spans=${spans.length} first=${firstLeft} beat2=${beat2Left} gridLeft=${gridlines?.style.left}`);
+  if (!ok) fail('count labels / gridlines are not PAD-aligned with the notes');
+  lab.destroy();
+}
+
 console.log(failures ? `\n${failures} FAILURE(S)` : '\nALL PASS');
 process.exit(failures ? 1 : 0);

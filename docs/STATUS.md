@@ -19,7 +19,11 @@ None. (Confirmed by Drew on the iPhone, 2026-06-08: **iOS audio context hardenin
 - **Clef selection by present voices.** `presentClefs()` draws a staff only for a hand that has sounding notes; a bass-only measure no longer paints an empty treble staff, and `staffHeight` is compact unless it's a true grand staff.
 - **New proof fixture `treble-low`** (grand staff, RH descends D4→A3) at /fixtures.html; smoke test adds geometry assertions (RH heads stay in the treble band; bass-only draws a single bass staff). Noteheads now carry `data-hand` for testing/dimming.
 
-**Remaining M1:** precise note-on-line placement / clef vertical-centering polish; inter-staff spacing review. Lower priority: compound-meter count labels; grid/countrow PAD alignment; `setMode` restarting transport while playing.
+**Polish pass (2026-06-08):**
+- **Count-row + gridline PAD alignment.** Count labels (`buildCountrow`) are now absolutely positioned at `mapFrac(tick)` and the faint tick gridlines moved to a `.lab-gridlines` child inset by `PAD` — so "1 e & a …" and the gridlines sit directly under the PAD-shifted notes/attacks instead of drifting across the measure. Smoke test asserts the alignment.
+- **`setMode` no longer restarts the transport.** Changing Tied↔Re-struck mid-play used to jump to the top; now `render()` rebuilds visuals + the attack list and the live scheduler picks up the new mode in place (verified headlessly: playback continues, press count updates).
+
+**Remaining M1 (not blocking, deferred):** clef vertical-centering / inter-staff spacing are font-dependent and already signed off — tweak only if Drew spots something on-device. Compound-meter (6/8) count labels are still quarter-based (musically wrong for compound) but there's no 6/8 fixture yet and the §-spec counting convention is needed — defer until a compound-meter fixture/feature exists. (`setHands`/`setTempo` still restart mid-play; only `setMode` was flagged.)
 
 ## Key decisions & findings
 - **Danny tie+chord** is modeled as **two right-hand voices** (§5 forbids within-voice overlap; "hold one note while striking others at a different tick" is polyphony, not a chord). Implication for **M2**: the §10.2 S1 prompt only describes chords + ties, not hold-while-strike — producing a §5-valid reading may need two RH voices. **Do not edit the verbatim §10 prompts without Drew.**
