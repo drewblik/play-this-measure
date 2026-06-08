@@ -8,14 +8,22 @@ is `play-this-measure-tdd.md`; UX context is `play-this-measure-fdd.md`._
 - **M-1 (dev infrastructure): ✅ complete.** Repo + Vercel auto-deploy + env vars + dormant Neon + installable PWA, verified on Drew's iPhone.
 - **M0 (engine extraction): ✅ complete & signed off.** `tie-rhythm.html` ported into `src/engine/` (`layout.js`, `audio.js`, `renderer.js`, `index.js`) behind `createLab`, driven by the §4 schema; 7 fixtures at **/fixtures.html**; `npm test` (jsdom smoke) green. iOS playback hardened (see resolved items below).
 - **M1 (renderer proof / geometry): ✅ complete & signed off (2026-06-08).** Clef-aware y-mapping (`yOf(d, clef)` per-clef ladders), clef selection by present voices (no empty staves), the `treble-low` proof fixture, count-row + gridline PAD alignment, and `setMode` mid-play continuity. All confirmed by Drew on the iPhone.
-- **Production:** https://play-this-measure.vercel.app — engine fixtures at **/fixtures.html**.
+- **M2 (measure-lesson loop): 🚧 built & deployed to production 2026-06-08, AWAITING Drew's on-device end-to-end test.** Full pipeline + UI: capture → S1 read → S2 validate/repair → Confirm (flags + Re-read) → S3 teach → Lesson play-along, lessons saved to IndexedDB and reopenable offline. Verbatim §10 prompts, §5 validator, `/api/claude` client, parse cache, §9 image prep, §17 cost. 3 headless suites green (engine smoke + parse + flow). The new hash-router Home replaces the M-1 shell. **Next: Drew runs a real crop (ideally the Danny tie+chord, §19.2) on the production URL.**
+- **Production:** https://play-this-measure.vercel.app — app at `/` (M2 flow), engine fixtures at **/fixtures.html**.
 - **Dev loop (no laptop needed):** edit → commit → push to `main` → Vercel auto-deploys → open the production URL on the phone. Each branch also gets a Vercel preview. Real data lives on the production URL only (preview URLs have separate on-device storage).
 
 ## OPEN
 None. (Confirmed by Drew on the iPhone, 2026-06-08: **iOS audio context hardening round 2** — `audio.js` `ensureCtx()` keeps the cached context only while actively running and otherwise rebuilds a fresh one inside the play gesture; `dropCtx()` invalidates it; `index.js` arms a 450ms frozen-clock watchdog that drops the context + stops so the next tap rebuilds. Sound is now reliable through fixture switching and leave/return. The round-1 `resume().then(begin)` + `wantPlay` guard remains underneath.)
 
-## Next milestone: M2 — audio → notation (first Claude API feature)  ← START HERE
-The §10.2 stage prompts turn a recorded/described performance into a §4 NOTATION object the engine already renders. This is the first feature that calls Claude, via the server-only `/api/claude.js` proxy (needs `ANTHROPIC_API_KEY`, set in Vercel; use `vercel dev` to exercise locally). **Plan M2 and show it before implementing; use the §10 prompts verbatim and the §3–4 schemas unchanged (read the `stage-prompts` + `notation-schema` skills first).** Watch the Danny implication: the §10.2 S1 prompt describes chords + ties but not hold-while-strike, which a §5-valid reading may need as two RH voices.
+## M2 — measure-lesson loop (🚧 deployed, under test) — files & decisions
+- **Pipeline:** `src/parse/prompts.js` (verbatim §10.2 S1 + repair + §10.3 S3), `validate.js` (verbatim §5 + bulletErrors), `client.js` (`callStage` 3 net-retries + fence-strip + 1 JSON-retry; `runS1` with S2 repair loop max 2 + `forceFresh` for Re-read; `runS3`; injectable cache), `cost.js` (§17). `src/util/image.js` (§9 downscale ≤1568/q0.85 + SHA-256 + thumb). `src/db.js` (full §3 IndexedDB; M2 uses blobs/cache/lessons/settings).
+- **UI:** `src/main.js` hash router; `src/ui/{home,capture,confirm,lesson,flow}.js` + `ui.css`. Capture gathers crop (required) + optional full page + Key/Mode/Time fields → contextLine. Confirm is display + low-conf flags + Teach + fresh Re-read (no editor — that's M4). Lesson saves to db, reopens with no API call.
+- **Decisions (Drew, 2026-06-08):** full `db.js` now (not just cache); crop + optional page + typed key/time; simple no-hints Re-read (bypasses cache via `forceFresh`).
+- **Tests:** `tests/parse.mjs` (mocked proxy, 18) + `tests/flow.mjs` (fake-indexeddb, 7). Real S1/S3 quality only verifiable on-device (camera + deployed key).
+- **Danny watch (open risk for the on-device test):** the §10.2 S1 prompt covers chords + ties but not hold-while-strike, so a §5-valid Danny reading may need two RH voices. If S1 returns a single-voice overlap it fails validation; S2 repairs ≤2×, then Confirm opens with errors (you can still Teach). **Do not edit the verbatim §10 prompts without Drew.**
+
+## Next milestone (after M2 sign-off): M3 — songs & persistence
+IndexedDB-backed Home + Song views, S0 overview, circle-of-fifths SVG, metronome, multi-page + M1 merge, JSON export/import. (`db.js` stores already exist; songs/pages/measures are unused until now.)
 
 ## M1 — renderer proof / geometry (✅ complete, detail)
 **Drew confirmed "Low right hand", count alignment, and mid-play mode switch on the iPhone, 2026-06-08:**
