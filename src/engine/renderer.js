@@ -74,13 +74,14 @@ function drawAccidental(svg, x, y, accidental) {
   svg.appendChild(el('text', { x: x - 16, y: y + 4, class: 'accidental' })).textContent = ACCIDENTAL[accidental];
 }
 
-function drawFlag(svg, sx, sb, durTicks) {
-  svg.appendChild(el('path', { d: `M ${sx} ${sb} q 9 3 8 14 q -1 -8 -8 -10 z`, class: 'flag' }));
-  if (durTicks === 1) svg.appendChild(el('path', { d: `M ${sx} ${sb - 7} q 9 3 8 14 q -1 -8 -8 -10 z`, class: 'flag' }));
+function drawFlag(svg, sx, sb, durTicks, stemDir) {
+  const f = stemDir; // +1 stem-down, -1 stem-up (mirror the flag vertically)
+  svg.appendChild(el('path', { d: `M ${sx} ${sb} q 9 ${3 * f} 8 ${14 * f} q -1 ${-8 * f} -8 ${-10 * f} z`, class: 'flag' }));
+  if (durTicks === 1) svg.appendChild(el('path', { d: `M ${sx} ${sb - 7 * f} q 9 ${3 * f} 8 ${14 * f} q -1 ${-8 * f} -8 ${-10 * f} z`, class: 'flag' }));
 }
 
 // A single (non-chord) segment: notehead, accidental, ledgers, stem, flag/dot.
-function drawNote(svg, seg, struck, beamY, xAt, lines, heads, hand) {
+function drawNote(svg, seg, struck, beamY, xAt, lines, heads, hand, stemDir) {
   const p = parsePitch(seg.pitch);
   const d = p.diatonic;
   const x = xAt(seg.startTick);
@@ -89,42 +90,47 @@ function drawNote(svg, seg, struck, beamY, xAt, lines, heads, hand) {
   drawAccidental(svg, x, y, p.accidental);
   const nh = placeNotehead(svg, x, y, struck);
   heads.push({ tick: seg.startTick, struck, el: nh, hand });
-  const sx = x - 5;
-  const sb = beamY != null ? beamY : y + 30;
+  const sx = x + (stemDir > 0 ? -5 : 5); // down-stem on the left, up-stem on the right
+  const sb = beamY != null ? beamY : y + stemDir * 30;
   svg.appendChild(el('line', { x1: sx, y1: y, x2: sx, y2: sb, class: 'stem' }));
   if (seg.durTicks === 3) svg.appendChild(el('circle', { cx: x + 11, cy: y - 2, r: 1.9, class: 'dot' })); // dotted
-  if (beamY == null && seg.durTicks < 4) drawFlag(svg, sx, sb, seg.durTicks);
+  if (beamY == null && seg.durTicks < 4) drawFlag(svg, sx, sb, seg.durTicks, stemDir);
 }
 
 // A beamed group of flagged segments within one beat.
-function drawGroup(svg, group, xAt, lines, heads, hand) {
-  if (group.length === 1) { drawNote(svg, group[0].seg, group[0].struck, null, xAt, lines, heads, hand); return; }
+function drawGroup(svg, group, xAt, lines, heads, hand, stemDir) {
+  if (group.length === 1) { drawNote(svg, group[0].seg, group[0].struck, null, xAt, lines, heads, hand, stemDir); return; }
   let maxY = -1e9;
-  group.forEach((g) => { maxY = Math.max(maxY, yOf(parsePitch(g.seg.pitch).diatonic)); });
-  const beamY = maxY + 30;
-  group.forEach((g) => drawNote(svg, g.seg, g.struck, beamY, xAt, lines, heads, hand));
-  const xA = xAt(group[0].seg.startTick) - 5;
-  const xB = xAt(group[group.length - 1].seg.startTick) - 5;
+  let minY = 1e9;
+  group.forEach((g) => { const yy = yOf(parsePitch(g.seg.pitch).diatonic); maxY = Math.max(maxY, yy); minY = Math.min(minY, yy); });
+  const beamY = stemDir > 0 ? maxY + 30 : minY - 30; // beam below (down-stems) or above (up-stems)
+  group.forEach((g) => drawNote(svg, g.seg, g.struck, beamY, xAt, lines, heads, hand, stemDir));
+  const off = stemDir > 0 ? -5 : 5;
+  const xA = xAt(group[0].seg.startTick) + off;
+  const xB = xAt(group[group.length - 1].seg.startTick) + off;
   svg.appendChild(el('line', { x1: xA, y1: beamY, x2: xB, y2: beamY, class: 'beam' }));
   group.forEach((g, idx) => {
     if (g.seg.durTicks !== 1) return; // sixteenth stub (secondary beam)
-    const x = xAt(g.seg.startTick) - 5;
+    const x = xAt(g.seg.startTick) + off;
     const hasLeft = idx > 0;
     const nbr = hasLeft ? group[idx - 1] : group[idx + 1] || g;
-    const nx = xAt(nbr.seg.startTick) - 5;
+    const nx = xAt(nbr.seg.startTick) + off;
     const stub = Math.min(14, Math.abs(nx - x) / 2) || 10;
     const dir = hasLeft ? -1 : 1;
-    svg.appendChild(el('line', { x1: x, y1: beamY - 7, x2: x + dir * stub, y2: beamY - 7, class: 'beam' }));
+    svg.appendChild(el('line', { x1: x, y1: beamY - 7 * stemDir, x2: x + dir * stub, y2: beamY - 7 * stemDir, class: 'beam' }));
   });
 }
 
 // A chord: noteheads sharing one stem top-to-bottom (+30). §7 #3.
-function drawChord(svg, tick, members, xAt, lines, heads, hand) {
+function drawChord(svg, tick, members, xAt, lines, heads, hand, stemDir) {
   const x = xAt(tick);
   const ys = members.map((m) => yOf(parsePitch(m.seg.pitch).diatonic));
   const topY = Math.min(...ys);
   const botY = Math.max(...ys);
-  svg.appendChild(el('line', { x1: x - 5, y1: topY, x2: x - 5, y2: botY + 30, class: 'stem' }));
+  const sx = x + (stemDir > 0 ? -5 : 5);
+  const y1 = stemDir > 0 ? topY : topY - 30;
+  const y2 = stemDir > 0 ? botY + 30 : botY;
+  svg.appendChild(el('line', { x1: sx, y1, x2: sx, y2, class: 'stem' }));
   members.forEach((m) => {
     const p = parsePitch(m.seg.pitch);
     const y = yOf(p.diatonic);
@@ -141,6 +147,9 @@ function renderVoice(svg, voice, notation, mode, xAt, heads) {
   const ticksPerBeat = notation.ticksPerBeat;
   const lines = clefLinesFor(voice.hand);
   const restY = yOf((Math.max(...lines) + Math.min(...lines)) / 2); // mid-staff
+  // Grand staff: treble stems up, bass stems down (point away from the inter-
+  // staff gap). A single staff keeps the prototype's down-stems.
+  const stemDir = hasBass(notation) && voice.hand === 'right' ? -1 : 1;
 
   // Rests: glyph at mid-staff. Suppress a rest when another voice in the SAME
   // clef is sounding across it (e.g. Danny's struck-chord voice rests while the
@@ -171,7 +180,7 @@ function renderVoice(svg, voice, notation, mode, xAt, heads) {
   const byTick = {};
   segAll.forEach((s) => { (byTick[s.seg.startTick] = byTick[s.seg.startTick] || []).push(s); });
   Object.keys(byTick).filter((t) => byTick[t].length > 1)
-    .forEach((t) => drawChord(svg, +t, byTick[t], xAt, lines, heads, voice.hand));
+    .forEach((t) => drawChord(svg, +t, byTick[t], xAt, lines, heads, voice.hand, stemDir));
 
   // Singles: beam flagged notes (<1 beat) within the same beat.
   const singles = segAll.filter((s) => byTick[s.seg.startTick].length === 1)
@@ -179,14 +188,14 @@ function renderVoice(svg, voice, notation, mode, xAt, heads) {
   let i = 0;
   while (i < singles.length) {
     const s = singles[i];
-    if (s.seg.durTicks >= ticksPerBeat) { drawNote(svg, s.seg, s.struck, null, xAt, lines, heads, voice.hand); i++; continue; }
+    if (s.seg.durTicks >= ticksPerBeat) { drawNote(svg, s.seg, s.struck, null, xAt, lines, heads, voice.hand, stemDir); i++; continue; }
     const beat = Math.floor(s.seg.startTick / ticksPerBeat);
     const group = [s];
     let j = i + 1;
     while (j < singles.length && singles[j].seg.durTicks < ticksPerBeat && Math.floor(singles[j].seg.startTick / ticksPerBeat) === beat) {
       group.push(singles[j]); j++;
     }
-    drawGroup(svg, group, xAt, lines, heads, voice.hand);
+    drawGroup(svg, group, xAt, lines, heads, voice.hand, stemDir);
     i = j;
   }
 

@@ -99,8 +99,10 @@ export const FIXTURES = [
           { pitch: 'D5', startTick: 12, durTicks: 4, confidence: 1 },
         ] },
         { hand: 'left', notes: [
-          { pitch: 'C3', startTick: 0, durTicks: 8, confidence: 1 },
-          { pitch: 'G3', startTick: 8, durTicks: 8, confidence: 1 },
+          { pitch: 'C3', startTick: 0, durTicks: 4, confidence: 1 },
+          { pitch: 'G3', startTick: 4, durTicks: 4, confidence: 1 },
+          { pitch: 'C3', startTick: 8, durTicks: 4, confidence: 1 },
+          { pitch: 'G3', startTick: 12, durTicks: 4, confidence: 1 },
         ] },
       ],
     },
