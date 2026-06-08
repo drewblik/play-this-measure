@@ -112,6 +112,8 @@ export function createLab(container, opts) {
   let sched = [];
   let timer = null;
   let rafId = null;
+  let liveNodes = []; // scheduled oscillators, so stop() can silence them
+  let lastTick = -1; // edge-detect so onTick fires once per tick, not per frame
   const secPerTick = () => 60 / bpm / notation.ticksPerBeat;
 
   function scheduler() {
@@ -120,14 +122,18 @@ export function createLab(container, opts) {
     while (nextTime < ctx.currentTime + LOOKAHEAD) {
       const tick = nextTick % total;
       const sp = secPerTick();
-      if (tick % notation.ticksPerBeat === 0) click(ctx, nextTime, tick % tpm === 0);
-      for (const a of attacks) if (a.tick === tick) tone(ctx, nextTime, a.freq, a.durTicks * sp * 0.98);
+      if (tick % notation.ticksPerBeat === 0) liveNodes.push({ node: click(ctx, nextTime, tick % tpm === 0), end: nextTime + 0.05 });
+      for (const a of attacks) if (a.tick === tick) {
+        const dur = a.durTicks * sp * 0.98;
+        for (const node of tone(ctx, nextTime, a.freq, dur)) liveNodes.push({ node, end: nextTime + dur + 0.03 });
+      }
       sched.push({ tick, time: nextTime, sp });
       nextTime += sp;
       nextTick++;
     }
     const now = ctx.currentTime;
     sched = sched.filter((s) => s.time > now - 1.0);
+    liveNodes = liveNodes.filter((n) => n.end > now); // drop finished oscillators
   }
 
   function animate() {
@@ -154,13 +160,17 @@ export function createLab(container, opts) {
         attackEls.filter((a) => a.tick === liveTick && active(a.hand)).forEach((a) => {
           a.el.classList.remove('flash'); void a.el.offsetWidth; a.el.classList.add('flash');
         });
-        heads.filter((h) => h.tick === liveTick && h.struck && active(h.hand)).forEach((h) => h.el.classList.add('lit'));
+        heads.filter((h) => h.tick === liveTick && h.struck && active(h.hand)).forEach((h) => {
+          h.el.classList.add('lit');
+          h.el.classList.remove('flash'); void h.el.getBoundingClientRect(); h.el.classList.add('flash'); // re-trigger pulse
+        });
       } else {
         const holding = attacks.some((a) => a.tick <= liveTick && a.tick + a.durTicks > liveTick);
         if (holding) { dot.className = 'lab-dot hold'; dot.textContent = 'hold'; handtxt.innerHTML = '<b>Hold</b> — keep the key down'; }
         else { dot.className = 'lab-dot'; dot.textContent = '—'; handtxt.innerHTML = 'rest'; }
       }
-      if (onTick) onTick(liveTick);
+      if (onTick && liveTick !== lastTick) onTick(liveTick);
+      lastTick = liveTick;
     }
     rafId = requestAnimationFrame(animate);
   }
@@ -171,6 +181,8 @@ export function createLab(container, opts) {
     nextTick = 0;
     nextTime = ctx.currentTime + 0.12;
     sched = [];
+    liveNodes = [];
+    lastTick = -1;
     timer = setInterval(scheduler, INTERVAL);
     scheduler();
     playhead.classList.add('on');
@@ -181,6 +193,8 @@ export function createLab(container, opts) {
     isPlaying = false;
     clearInterval(timer);
     if (rafId) cancelAnimationFrame(rafId);
+    liveNodes.forEach((n) => { try { n.node.stop(); } catch (e) { /* already stopped */ } });
+    liveNodes = [];
     playhead.classList.remove('on');
     countCells.forEach((c) => c.classList.remove('lit'));
     heads.forEach((h) => h.el.classList.remove('lit'));
@@ -201,7 +215,7 @@ export function createLab(container, opts) {
 
   // initial paint, then a rAF re-render once the container has real width
   render();
-  requestAnimationFrame(render);
+  const initRaf = requestAnimationFrame(render);
 
   return {
     play() { if (!isPlaying) start(); },
@@ -211,6 +225,8 @@ export function createLab(container, opts) {
     setHands(h) { hands = h; rebuildAudio(); applyHandsDim(); restartIfPlaying(); },
     destroy() {
       stop();
+      cancelAnimationFrame(initRaf);
+      clearTimeout(resizeTimer);
       window.removeEventListener('resize', onResize);
       container.innerHTML = '';
     },

@@ -29,6 +29,7 @@ export function click(ctx, t, accent) {
   o.connect(g).connect(ctx.destination);
   o.start(t);
   o.stop(t + 0.05);
+  return o;
 }
 
 // Sustained tone: triangle fundamental + sine octave. Attack 12ms to peak, hold
@@ -62,6 +63,7 @@ export function tone(ctx, t, freq, dur) {
   o2.start(t);
   o.stop(t + dur + 0.03);
   o2.stop(t + dur + 0.03);
+  return [o, o2];
 }
 
 // Build the per-tick attack list for the whole notation, honoring tie/re-struck

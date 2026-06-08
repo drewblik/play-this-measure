@@ -23,10 +23,12 @@ svg.lab-notation { display: block; width: 100%; overflow: visible; } /* height s
 .accidental { fill: var(--ink); font-size: 17px; font-family: "Noto Music", serif; }
 .rest { fill: var(--ink); font-size: 26px; font-family: "Noto Music", serif; }
 
-.nh { fill: var(--ink); stroke: none; }
+.nh { fill: var(--ink); stroke: none; transform-box: fill-box; transform-origin: center; }
 .nh.tied { fill: var(--paper); stroke: var(--hold); stroke-width: 1.6; } /* hollow blue = written, not re-pressed */
 .nh.lit { fill: var(--attack); }
 .nh.muted { opacity: 0.26; }
+.nh.flash { animation: ptm-nflash .35s ease; }
+@keyframes ptm-nflash { 0% { transform: scale(1.5); } 100% { transform: scale(1); } }
 .stem { stroke: var(--ink); stroke-width: 1.4; }
 .beam { stroke: var(--ink); stroke-width: 4; stroke-linecap: butt; }
 .flag { fill: var(--ink); stroke: none; }
