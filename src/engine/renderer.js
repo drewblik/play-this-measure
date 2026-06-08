@@ -36,7 +36,16 @@ function hasBass(notation) {
 
 // Total SVG height: taller when a bass staff is present.
 export function staffHeight(notation) {
-  return hasBass(notation) ? 156 : 100;
+  return hasBass(notation) ? 150 : 78;
+}
+
+// Clef glyph placements. Drawn by createLab in a left column OUTSIDE the SVG so
+// they never overlap the first notes. centerY is the SVG y the glyph centers on
+// (createLab positions it with translateY(-50%)).
+export function clefPositions(notation) {
+  const out = [{ clef: 'treble', glyph: CLEF.treble, centerY: yOf(34), size: 52 }];
+  if (hasBass(notation)) out.push({ clef: 'bass', glyph: CLEF.bass, centerY: yOf(22), size: 38 });
+  return out;
 }
 
 function clefLinesFor(hand) {
@@ -197,15 +206,12 @@ export function renderStaff(svg, notation, { mode }) {
   svg.setAttribute('height', staffHeight(notation));
   const xAt = (t) => mapFrac(t, total) * width;
 
-  // Staff lines + clef glyph per present clef.
+  // Staff lines per present clef. Clef glyphs are drawn by createLab in a
+  // separate left column (see clefPositions) so they never overlap the notes.
   const clefs = hasBass(notation) ? ['treble', 'bass'] : ['treble'];
   for (const clef of clefs) {
     const lines = clef === 'bass' ? BASS_LINES : TREBLE_LINES;
     for (const d of lines) svg.appendChild(el('line', { x1: 0, y1: yOf(d), x2: width, y2: yOf(d), class: 'staffline' }));
-    const midY = yOf((Math.max(...lines) + Math.min(...lines)) / 2);
-    const g = el('text', { x: 2, y: midY + (clef === 'bass' ? 10 : 16), class: `clef clef-${clef}` });
-    g.textContent = CLEF[clef];
-    svg.appendChild(g);
   }
 
   // Barlines between measures.

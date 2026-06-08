@@ -5,7 +5,7 @@
 // setHands/destroy. Orchestrates renderer.js (visuals) + audio.js (sound).
 import { totalTicks, ticksPerMeasure, mapFrac } from './layout.js';
 import { ensureCtx, click, tone, buildAttacks } from './audio.js';
-import { renderStaff, buildBlocks } from './renderer.js';
+import { renderStaff, buildBlocks, clefPositions } from './renderer.js';
 
 const LOOKAHEAD = 0.1; // seconds scheduled ahead
 const INTERVAL = 25; // ms scheduler tick
@@ -20,17 +20,23 @@ export function createLab(container, opts) {
   // ---- DOM ----
   container.innerHTML = `
     <div class="lab">
-      <div class="lab-playfield">
-        <svg class="lab-notation"></svg>
-        <div class="lab-grid"></div>
-        <div class="lab-playhead"></div>
+      <div class="lab-stage">
+        <div class="lab-clefs"></div>
+        <div class="lab-content">
+          <div class="lab-playfield">
+            <svg class="lab-notation"></svg>
+            <div class="lab-grid"></div>
+            <div class="lab-playhead"></div>
+          </div>
+          <div class="lab-countrow"></div>
+        </div>
       </div>
-      <div class="lab-countrow"></div>
       <div class="lab-indicator">
         <div class="lab-press">Keys you press: <b class="lab-pressN">0</b></div>
         <div class="lab-hand"><span class="lab-dot">—</span><span class="lab-handtxt">Press play to follow along</span></div>
       </div>
     </div>`;
+  const clefHost = container.querySelector('.lab-clefs');
   const svg = container.querySelector('.lab-notation');
   const grid = container.querySelector('.lab-grid');
   const playfield = container.querySelector('.lab-playfield');
@@ -84,6 +90,16 @@ export function createLab(container, opts) {
     buildCountrow();
     applyHandsDim();
     rebuildAudio();
+    // clef glyphs in the left column (kept out of the SVG so they never overlap notes)
+    clefHost.innerHTML = '';
+    for (const c of clefPositions(notation)) {
+      const s = document.createElement('span');
+      s.className = 'lab-clef';
+      s.textContent = c.glyph;
+      s.style.top = c.centerY + 'px';
+      s.style.fontSize = c.size + 'px';
+      clefHost.appendChild(s);
+    }
     // playfield height = staff svg + grid
     playfield.style.height = svg.getBoundingClientRect().height + grid.getBoundingClientRect().height + 6 + 'px';
   }

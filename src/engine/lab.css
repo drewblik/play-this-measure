@@ -4,6 +4,12 @@
 
 .lab { font-family: "Newsreader", Georgia, serif; color: var(--ink); }
 
+/* ---- layout: clef column + content (clefs live OUTSIDE the SVG) ---- */
+.lab-stage { display: flex; align-items: stretch; }
+.lab-clefs { flex: 0 0 30px; position: relative; }
+.lab-content { flex: 1 1 auto; min-width: 0; }
+.lab-clef { position: absolute; left: 0; transform: translateY(-50%); line-height: 1; color: var(--ink); font-family: "Noto Music", "Bravura", serif; }
+
 /* ---- notation ---- */
 .lab-playfield { position: relative; }
 svg.lab-notation { display: block; width: 100%; height: 100px; overflow: visible; }
