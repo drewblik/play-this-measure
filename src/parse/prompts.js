@@ -15,7 +15,9 @@ If more than one measure happens to be visible in the crop, read ONLY the FIRST 
 
 Work in two steps.
 
-STEP 1 — Read aloud (this raises accuracy; keep it terse). Go beat by beat, left to right. For EACH staff (treble then bass) name, for every notehead at that beat: which line or space it sits on (count from the bottom line of that staff, and note ledger lines above/below), the pitch that yields in that clef and key, and its duration read from the notehead shape (filled head = quarter or, if beamed/flagged, eighth/sixteenth; open head with stem = half; open head no stem = whole). Verify each staff's durations sum to a full measure before continuing.
+STEP 1 — Read aloud (this raises accuracy; keep it terse). Go beat by beat, left to right. For EACH staff (treble then bass) name, for every notehead at that beat: which line or space it sits on (count from the bottom line of that staff, and note ledger lines above/below), the pitch that yields in that clef and key, and its duration read from the notehead shape (filled head = quarter or, if beamed/flagged, eighth/sixteenth; open head with stem = half; open head no stem = whole).
+
+A single staff often carries TWO independent lines at once — most commonly a moving melody with stems UP over longer held notes with stems DOWN (or vice versa). When the notes on a staff do NOT all share the same rhythm, separate them by stem direction into independent lines and read each line on its own. Verify that EACH independent line sums to a full measure before continuing.
 
 STEP 2 — Output the JSON object as the LAST thing in your response (nothing after it), matching exactly this schema:
 {
@@ -31,8 +33,9 @@ STEP 2 — Output the JSON object as the LAST thing in your response (nothing af
 Hard rules:
 - measures is always 1. ticksPerBeat is 4 (sixteenth-note grid). startTick counts from 0 at the start of the measure.
 - A tied pair of notes is ONE note object whose durTicks is the combined sounding length. Never emit two objects for a tie.
-- A chord is multiple note objects with the SAME startTick in the same voice, equal durTicks.
-- Rests are explicit objects with pitch "rest". Every voice's events must exactly fill beats × ticksPerBeat ticks with no gaps and no overlaps.
+- A chord is multiple note objects with the SAME startTick in the same voice, ALL with equal durTicks.
+- POLYPHONY: when a staff has two independent lines (different rhythms at the same time — e.g. a quarter-note melody over a held half note), emit them as SEPARATE voice objects that share the same "hand" (e.g. two "right" voices). NEVER put notes of different durTicks at the same startTick in one voice — that is not a chord. The stems-up line is one voice; the stems-down line is another.
+- Rests are explicit objects with pitch "rest". Each voice object must INDEPENDENTLY fill beats × ticksPerBeat ticks with no gaps and no overlaps — insert explicit rests for the beats where that voice is silent.
 - Apply the key signature from Image 2 to pitches (e.g., in G major an unmarked F is F#).
 - Treble staff notes belong to hand "right", bass staff to hand "left", regardless of where hands might actually play them.
 - If a note is hard to read, give your best guess with low confidence rather than omitting it.
