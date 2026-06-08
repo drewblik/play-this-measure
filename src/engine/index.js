@@ -113,6 +113,7 @@ export function createLab(container, opts) {
   let timer = null;
   let rafId = null;
   let lastTick = -1; // edge-detect so onTick fires once per tick, not per frame
+  let wantPlay = false; // intent flag; guards the async resume->begin path
   const secPerTick = () => 60 / bpm / notation.ticksPerBeat;
 
   function scheduler() {
@@ -172,18 +173,28 @@ export function createLab(container, opts) {
 
   function start() {
     ctx = ensureCtx();
-    isPlaying = true;
-    nextTick = 0;
-    nextTime = ctx.currentTime + 0.12;
-    sched = [];
-    lastTick = -1;
-    timer = setInterval(scheduler, INTERVAL);
-    scheduler();
-    playhead.classList.add('on');
-    rafId = requestAnimationFrame(animate);
+    wantPlay = true;
+    const begin = () => {
+      if (!wantPlay) return; // stop() was called before resume() resolved
+      isPlaying = true;
+      nextTick = 0;
+      nextTime = ctx.currentTime + 0.12;
+      sched = [];
+      lastTick = -1;
+      timer = setInterval(scheduler, INTERVAL);
+      scheduler();
+      playhead.classList.add('on');
+      rafId = requestAnimationFrame(animate);
+    };
+    // iOS: the AudioContext can be suspended/interrupted between plays. resume()
+    // is async; if we schedule against a still-frozen currentTime the playhead
+    // never advances. Only begin once the clock is actually running.
+    if (ctx.state === 'running') begin();
+    else ctx.resume().then(begin, begin);
   }
 
   function stop() {
+    wantPlay = false;
     isPlaying = false;
     clearInterval(timer);
     if (rafId) cancelAnimationFrame(rafId);
