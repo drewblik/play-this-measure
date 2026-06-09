@@ -46,6 +46,27 @@ export function pitchToFreq(pitch) {
   return 440 * Math.pow(2, (parsePitch(pitch).midi - 69) / 12);
 }
 
+// ---------- pitch editing (M4 tap-to-fix) ----------
+// Move a notehead up/down by `delta` staff positions (diatonic steps). The model
+// most often misreads a pitch by one line/space, so a step nudge is the core fix.
+// Stepping lands on the natural of the new position (drops any accidental — that's
+// what "move the dot one line up" means visually); octave is clamped to 0..8 so
+// the result still matches the §5 pitch regex.
+const DIATONIC_TO_LETTER = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+export function stepDiatonic(pitch, delta) {
+  const d = parsePitch(pitch).diatonic + delta;
+  const octave = Math.min(8, Math.max(0, Math.floor(d / 7)));
+  const letter = DIATONIC_TO_LETTER[((d % 7) + 7) % 7];
+  return `${letter}${octave}`;
+}
+
+// Shift a pitch by whole octaves, preserving letter + accidental (clamped 0..8).
+export function shiftOctave(pitch, delta) {
+  const { letter, accidental, octave } = parsePitch(pitch);
+  const acc = accidental === 1 ? '#' : accidental === -1 ? 'b' : '';
+  return `${letter}${acc}${Math.min(8, Math.max(0, octave + delta))}`;
+}
+
 // ---------- horizontal mapping (tick -> x fraction) ----------
 // Ported from the prototype's mapFrac, generalized from a fixed 16-tick bar to
 // the whole notation's tick span.

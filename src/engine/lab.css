@@ -30,6 +30,14 @@ svg.lab-notation { display: block; width: 100%; overflow: visible; } /* height s
 .nh.low-conf { stroke: var(--gold); stroke-width: 1.5; stroke-dasharray: 1.6 1.6; } /* §13 uncertain reading */
 .nh.flash { animation: ptm-nflash .35s ease; }
 @keyframes ptm-nflash { 0% { transform: scale(1.5); } 100% { transform: scale(1); } }
+/* ---- M4 tap-to-fix selection ---- */
+.selectable { cursor: pointer; }
+svg.lab-notation .nh.selectable { pointer-events: all; } /* tilted <g> doesn't block taps */
+.nh.sel { fill: var(--attack); stroke: var(--attack); stroke-width: 2.4; }
+.rest.selectable { cursor: pointer; }
+.rest.sel { fill: var(--attack); }
+.block.sel .sustain { border-color: var(--attack); border-width: 2.5px; box-shadow: 0 0 0 2px var(--attack); }
+
 .stem { stroke: var(--ink); stroke-width: 1.4; }
 .beam { stroke: var(--ink); stroke-width: 4; stroke-linecap: butt; }
 .flag { fill: var(--ink); stroke: none; }

@@ -70,6 +70,23 @@
 .tempo { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-soft); font-family: "Fraunces", serif; }
 .tempo input { width: 120px; }
 
+/* M4 tap-to-fix edit bar (Confirm) */
+.edit-host { margin-top: 12px; min-height: 24px; }
+.edit-hint { font-size: 14px; color: var(--ink-soft); font-family: "Fraunces", serif; text-align: center; margin: 6px 0; }
+.edit-bar { border: 1.5px solid var(--rule); border-radius: 12px; padding: 12px; background: var(--paper-2); }
+.edit-sel { font-family: "Fraunces", serif; font-size: 15px; color: var(--ink-soft); margin-bottom: 10px; }
+.edit-sel b { color: var(--attack); font-size: 17px; }
+.edit-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.ebtn {
+  min-width: 46px; min-height: 40px; padding: 0 12px; border-radius: 10px; cursor: pointer;
+  border: 1.5px solid var(--rule); background: var(--paper); color: var(--ink);
+  font-family: "Fraunces", serif; font-size: 15px; font-weight: 600;
+}
+.ebtn:active { background: var(--paper-2); }
+.ebtn:disabled { opacity: .4; cursor: default; }
+.ebtn.warn { border-color: var(--attack); color: var(--attack); }
+.ebtn.ghost { color: var(--ink-soft); margin-left: auto; }
+
 /* saved-lesson list (Home) */
 .lesson-list { display: grid; gap: 10px; }
 .lesson-card { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; border: 1px solid var(--rule); border-radius: 11px; padding: 8px; background: var(--paper); }

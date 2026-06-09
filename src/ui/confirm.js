@@ -3,8 +3,10 @@
 // Teach / Re-read. The tap-to-fix editor is M4.
 import { createLab } from '../engine/index.js';
 import { runS1, runS3 } from '../parse/client.js';
+import { validateNotation } from '../parse/validate.js';
 import { cache, putLesson } from '../db.js';
 import { draft } from './flow.js';
+import * as edit from './editor.js';
 
 const DECLINE = {
   'not sheet music': "That photo doesn't look like sheet music. Try a clear, straight-on shot of the staff.",
@@ -15,11 +17,13 @@ const DECLINE = {
 export function mountConfirm(app) {
   if (!draft.s1) { location.hash = '#/capture'; return; }
   let lab = null;
+  let sel = null; // {vi, ni} of the note being edited (M4 tap-to-fix)
 
   function destroyLab() { if (lab) { try { lab.destroy(); } catch (e) {} lab = null; } }
 
   function renderResult() {
     destroyLab();
+    sel = null; // a fresh reading invalidates any prior selection
     const s1 = draft.s1;
 
     if (s1.error) {
@@ -31,22 +35,58 @@ export function mountConfirm(app) {
       return;
     }
 
-    const { notation, validation, cached } = s1;
+    const { notation, cached } = s1;
     const lowConf = notation.voices.some((v) => v.notes.some((n) => n.pitch !== 'rest' && n.confidence < 0.7));
     app.innerHTML = `
       <a class="backlink" href="#/capture">← Retake</a>
       <div class="eyebrow" style="margin-top:10px">Confirm the reading</div>
       <h2 class="view-h">Here's what I read</h2>
-      <div class="banner info">Tap <b>Teach me</b> if this looks right${cached ? ' (loaded from cache — no charge)' : ''}. ${lowConf ? 'Notes I’m unsure about have a <b>dotted gold</b> outline.' : ''}</div>
-      ${validation.ok ? '' : `<div class="banner warn"><b>The rhythm doesn't add up yet</b> (the model couldn't fully fix it):<ul>${validation.errors.map((e) => `<li>${e}</li>`).join('')}</ul>You can still teach it, or re-read.</div>`}
+      <div class="banner info">Tap a note to fix it, then <b>Teach me</b>${cached ? ' (loaded from cache — no charge)' : ''}. ${lowConf ? 'Notes I’m unsure about have a <b>dotted gold</b> outline.' : ''}</div>
+      <div id="valBanner"></div>
       <div class="card" style="padding:16px"><div id="labHost"></div></div>
+      <div id="editHost" class="edit-host"></div>
       <div class="btn-row two" style="margin-top:16px">
         <button class="btn ghost" id="rereadBtn">↻ Re-read</button>
         <button class="btn" id="teachBtn">Teach me →</button>
       </div>`;
 
-    lab = createLab(app.querySelector('#labHost'), { notation, tempoBpm: 60, mode: 'tie', hands: 'both' });
+    const editHost = app.querySelector('#editHost');
+    // Tap a note/rest/block on the staff -> select it and show the edit controls.
+    lab = createLab(app.querySelector('#labHost'), {
+      notation, tempoBpm: 60, mode: 'tie', hands: 'both',
+      onSelectNote: (vi, ni) => { sel = { vi, ni }; lab.select(sel); drawControls(); },
+    });
 
+    // Apply an edit op, re-validate, repaint, keep the selection, persist.
+    function apply(fn) {
+      sel = fn(notation, sel) || sel;
+      s1.validation = validateNotation(notation);
+      draft.s1 = s1; // persist edits so Teach uses the corrected reading
+      lab.rerender();
+      lab.select(sel);
+      drawValidation();
+      drawControls();
+    }
+    function drawControls() {
+      edit.renderControls(editHost, notation, sel, {
+        up: () => apply((n, s) => edit.stepPitch(n, s, 1)),
+        down: () => apply((n, s) => edit.stepPitch(n, s, -1)),
+        octup: () => apply((n, s) => edit.octave(n, s, 1)),
+        octdown: () => apply((n, s) => edit.octave(n, s, -1)),
+        rest: () => apply(edit.toggleRest),
+        split: () => apply(edit.split),
+        del: () => apply(edit.del),
+        done: () => { sel = null; lab.select(null); drawControls(); },
+      });
+    }
+    function drawValidation() {
+      const v = app.querySelector('#valBanner');
+      v.innerHTML = s1.validation.ok ? ''
+        : `<div class="banner warn"><b>The rhythm doesn't add up yet.</b><ul>${s1.validation.errors.map((e) => `<li>${e}</li>`).join('')}</ul>Fix the notes, or teach it as-is.</div>`;
+    }
+
+    drawValidation();
+    drawControls();
     app.querySelector('#rereadBtn').addEventListener('click', reread);
     app.querySelector('#teachBtn').addEventListener('click', teach);
   }

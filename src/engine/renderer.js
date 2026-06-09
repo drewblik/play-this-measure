@@ -103,6 +103,14 @@ function placeNotehead(svg, x, y, struck, hand) {
   return nh;
 }
 
+// M4: stamp a rendered element with the source note it came from (voice index +
+// note index), so a tap on the staff maps back to a notation note to edit.
+function tagSource(node, src) {
+  if (src.vi == null) return;
+  node.setAttribute('data-vi', src.vi);
+  node.setAttribute('data-ni', src.ni);
+}
+
 function drawAccidental(svg, x, y, accidental) {
   if (!accidental) return;
   svg.appendChild(el('text', { x: x - 16, y: y + 4, class: 'accidental' })).textContent = ACCIDENTAL[accidental];
@@ -124,7 +132,8 @@ function drawNote(svg, seg, struck, beamY, xAt, lines, heads, hand, stemDir, cle
   drawAccidental(svg, x, y, p.accidental);
   const nh = placeNotehead(svg, x, y, struck, hand);
   if (seg.confidence < 0.7) nh.classList.add('low-conf'); // §13 — uncertain reading
-  heads.push({ tick: seg.startTick, struck, el: nh, hand });
+  tagSource(nh, seg); // M4: which source note this head belongs to (tap-to-fix)
+  heads.push({ tick: seg.startTick, struck, el: nh, hand, vi: seg.vi, ni: seg.ni });
   const sx = x + (stemDir > 0 ? -5 : 5); // down-stem on the left, up-stem on the right
   const sb = beamY != null ? beamY : y + stemDir * 30;
   svg.appendChild(el('line', { x1: sx, y1: y, x2: sx, y2: sb, class: 'stem' }));
@@ -173,13 +182,14 @@ function drawChord(svg, tick, members, xAt, lines, heads, hand, stemDir, clef) {
     drawAccidental(svg, x, y, p.accidental);
     const nh = placeNotehead(svg, x, y, m.struck, hand);
     if (m.seg.confidence < 0.7) nh.classList.add('low-conf'); // §13 — uncertain reading
-    heads.push({ tick: m.seg.startTick, struck: m.struck, el: nh, hand });
+    tagSource(nh, m.seg); // M4: source-note identity for tap-to-fix
+    heads.push({ tick: m.seg.startTick, struck: m.struck, el: nh, hand, vi: m.seg.vi, ni: m.seg.ni });
   });
 }
 
 // Render one voice into its clef band. Mirrors the prototype's renderNotation,
 // scoped to one voice and one clef.
-function renderVoice(svg, voice, notation, mode, xAt, heads) {
+function renderVoice(svg, voice, notation, mode, xAt, heads, vi) {
   const ticksPerBeat = notation.ticksPerBeat;
   const clef = voice.hand === 'left' ? 'bass' : 'treble';
   const lines = clefLinesFor(voice.hand);
@@ -191,28 +201,30 @@ function renderVoice(svg, voice, notation, mode, xAt, heads) {
   // Rests: glyph at mid-staff. Suppress a rest when another voice in the SAME
   // clef is sounding across it (e.g. Danny's struck-chord voice rests while the
   // held melody plays) — otherwise the rest glyph collides with that note.
-  for (const note of voice.notes) {
-    if (note.pitch !== 'rest') continue;
+  voice.notes.forEach((note, ni) => {
+    if (note.pitch !== 'rest') return;
     const covered = notation.voices.some((other) =>
       other !== voice && other.hand === voice.hand &&
       other.notes.some((n) => n.pitch !== 'rest' &&
         n.startTick < note.startTick + note.durTicks && n.startTick + n.durTicks > note.startTick));
-    if (covered) continue;
+    if (covered) return;
     const t = el('text', { x: xAt(note.startTick) - 5, y: restY + 4, class: 'rest' });
     t.textContent = REST_GLYPH(note.durTicks);
+    tagSource(t, { vi, ni }); // M4: rests are tap-to-fix targets too (rest -> note)
     svg.appendChild(t);
-  }
+  });
 
   // Pitched notes -> drawing segments (split at beats; struck-ness is mode-aware).
   const segAll = [];
-  for (const note of voice.notes) {
-    if (note.pitch === 'rest') continue;
+  voice.notes.forEach((note, ni) => {
+    if (note.pitch === 'rest') return;
     for (const seg of splitAtBeats(note, ticksPerBeat)) {
       seg.confidence = note.confidence; // carry §4 confidence for the §13 low-conf flag
+      seg.vi = vi; seg.ni = ni;          // M4: source-note identity for tap-to-fix
       const struck = mode === 'tie' ? seg.startTick === note.startTick : true;
       segAll.push({ seg, struck });
     }
-  }
+  });
 
   // Chords first (multiple segments sharing a startTick).
   const byTick = {};
@@ -286,7 +298,7 @@ export function renderStaff(svg, notation, { mode }) {
   }
 
   const heads = [];
-  for (const voice of notation.voices) renderVoice(svg, voice, notation, mode, xAt, heads);
+  notation.voices.forEach((voice, vi) => renderVoice(svg, voice, notation, mode, xAt, heads, vi));
   return { heads, width };
 }
 
@@ -296,10 +308,11 @@ export function buildBlocks(grid, notation, { mode }) {
   [...grid.querySelectorAll('.block, .attack')].forEach((n) => n.remove());
   const total = totalTicks(notation);
 
-  // All non-rest notes, tagged with hand, in one global lane space.
+  // All non-rest notes, tagged with hand + source identity (vi/ni for M4 tap-to-fix),
+  // in one global lane space.
   const notes = [];
-  notation.voices.forEach((v) => {
-    for (const n of v.notes) if (n.pitch !== 'rest') notes.push({ ...n, hand: v.hand });
+  notation.voices.forEach((v, vi) => {
+    v.notes.forEach((n, ni) => { if (n.pitch !== 'rest') notes.push({ ...n, hand: v.hand, vi, ni }); });
   });
   const { nLanes, laneByIndex } = assignLanes(notes);
 
@@ -318,6 +331,7 @@ export function buildBlocks(grid, notation, { mode }) {
     const bar = document.createElement('div');
     bar.className = 'block';
     bar.dataset.hand = note.hand;
+    if (note.vi != null) { bar.dataset.vi = note.vi; bar.dataset.ni = note.ni; } // M4 tap target
     bar.style.left = mapFrac(note.startTick, total) * 100 + '%';
     bar.style.width = (1 - PAD) * (note.durTicks / total) * 100 + '%';
     bar.style.top = top + 'px';

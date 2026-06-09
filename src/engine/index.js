@@ -16,6 +16,8 @@ export function createLab(container, opts) {
   let mode = opts.mode || 'tie'; // 'tie' | 'restruck'
   let hands = opts.hands || 'both'; // 'both' | 'right' | 'left'
   const onTick = opts.onTick;
+  const onSelectNote = opts.onSelectNote; // M4: tap a note/rest/block -> (vi, ni)
+  let selected = opts.selected || null;   // {vi, ni} of the note being edited
 
   // ---- DOM ----
   container.innerHTML = `
@@ -105,6 +107,26 @@ export function createLab(container, opts) {
     }
     // playfield height = staff svg + grid
     playfield.style.height = svg.getBoundingClientRect().height + grid.getBoundingClientRect().height + 6 + 'px';
+    wireSelection();
+  }
+
+  // ---- M4 tap-to-fix: make every source-tagged element selectable ----
+  function wireSelection() {
+    if (!onSelectNote) return;
+    container.querySelectorAll('[data-vi]').forEach((node) => {
+      node.classList.add('selectable');
+      node.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        onSelectNote(+node.dataset.vi, +node.dataset.ni);
+      });
+    });
+    applySelection();
+  }
+  function applySelection() {
+    container.querySelectorAll('.sel').forEach((n) => n.classList.remove('sel'));
+    if (!selected) return;
+    container.querySelectorAll(`[data-vi="${selected.vi}"][data-ni="${selected.ni}"]`)
+      .forEach((n) => n.classList.add('sel'));
   }
 
   // ---- transport ----
@@ -239,6 +261,8 @@ export function createLab(container, opts) {
     setTempo(b) { bpm = b; restartIfPlaying(); },
     setMode(m) { mode = m; render(); }, // render() rebuilds visuals + the attack list; the live scheduler picks up the new mode without restarting from the top
     setHands(h) { hands = h; rebuildAudio(); applyHandsDim(); restartIfPlaying(); },
+    select(s) { selected = s; applySelection(); },     // M4: highlight the edited note
+    rerender() { stop(); render(); },                  // M4: repaint after a notation edit
     destroy() {
       stop();
       cancelAnimationFrame(initRaf);
